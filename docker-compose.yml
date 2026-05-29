@@ -1,0 +1,35 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DB: basic4_onboarding
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+      RACK_ENV: production
+      PORT: 4567
+    ports:
+      - "${PORT:-4567}:4567"
+    volumes:
+      - bundle_cache:/usr/local/bundle
+
+volumes:
+  mongo_data:
+  bundle_cache:

@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require_relative "../lib/basic4"
+
+puts Basic4.greet(ARGV[0] || "world")
