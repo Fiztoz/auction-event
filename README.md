@@ -97,26 +97,17 @@ All HTTP routes live in `app.rb`; only the services move into modules.
 │   ├── basic4.rb                          Library module (greet / parallel_greet / report)
 │   └── basic4/
 │       ├── db.rb                          Mongo client + index setup
-│       ├── errors.rb                      Basic4::ValidationError (shared)
+│       ├── result.rb                      Basic4::Result — Success/Failure (Data), Chain mixin (bind/map/tap_ok)
 │       ├── scoring.rb                     Basic4::Scoring — pure score calculator
-│       ├── identity/                      Domain services follow ports & adapters
+│       ├── identity/                      Functional services + ports & adapters
 │       │   ├── user.rb                    Shared constants, find, public_view, token helpers
-│       │   ├── registration.rb            signup (class + .default + .signup shim)
-│       │   ├── authentication.rb          login (class + .default + .call shim)
-│       │   ├── profile.rb                 update name / email / password (class + .default + .update shim)
-│       │   ├── password_reset.rb          request + reset (class + .default + class-method shims)
-│       │   ├── ports/                     Documented interfaces (DuplicateEmail lives here)
-│       │   │   ├── user_repository.rb
-│       │   │   ├── password_hasher.rb
-│       │   │   ├── token_generator.rb
-│       │   │   ├── notifier.rb
-│       │   │   └── clock.rb
-│       │   └── adapters/                  Concrete implementations
-│       │       ├── mongo_user_repository.rb
-│       │       ├── bcrypt_password_hasher.rb
-│       │       ├── secure_random_token_generator.rb
-│       │       ├── stdout_notifier.rb
-│       │       └── system_clock.rb
+│       │   ├── inputs.rb                  Data.define value objects (Signup, Login, ProfileUpdate, …)
+│       │   ├── ports.rb                   Consolidated port docstrings + DuplicateEmail
+│       │   ├── adapters.rb                Consolidated adapter MODULES (MongoUserRepo, BcryptHasher, SecureRandomTokens, StdoutNotifier, SystemClock)
+│       │   ├── registration.rb            signup — module_function + .then pipeline
+│       │   ├── authentication.rb          .call — module_function + small composed helpers
+│       │   ├── profile.rb                 update — module_function + procedural composition over conditional changes
+│       │   └── password_reset.rb          .request + .reset — module_function + pipelines
 │       └── onboarding/
 │           ├── email_verification.rb      .verify and .resend
 │           └── credit_scoring.rb          .save (persists scoring result)

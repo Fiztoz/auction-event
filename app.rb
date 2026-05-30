@@ -4,9 +4,10 @@ require "json"
 require "dotenv/load" if File.exist?(File.expand_path("../.env", __FILE__))
 
 require_relative "lib/basic4/db"
-require_relative "lib/basic4/errors"
+require_relative "lib/basic4/result"
 require_relative "lib/basic4/scoring"
 require_relative "lib/basic4/identity/user"
+require_relative "lib/basic4/identity/inputs"
 require_relative "lib/basic4/identity/registration"
 require_relative "lib/basic4/identity/authentication"
 require_relative "lib/basic4/identity/profile"
@@ -45,6 +46,17 @@ module Basic4
       def require_user!
         halt 401, json(error: "not signed in") unless session[:user_id]
       end
+
+      def respond_with(result, success_status: 200, failure_status: 422, &on_success)
+        case result
+        in Basic4::Result::Success(value:)
+          status success_status
+          on_success.call(value)
+        in Basic4::Result::Failure(field:, message:)
+          status failure_status
+          json error: message, field: field
+        end
+      end
     end
 
     get "/" do
@@ -66,93 +78,87 @@ module Basic4
 
     post "/api/signup" do
       body = json_body
-      user = Basic4::Identity::Registration.signup(
-        email:    body["email"],
-        password: body["password"],
-        name:     body["name"]
+      result = Basic4::Identity::Registration.signup(
+        Basic4::Identity::Inputs::Signup.new(
+          email:    body["email"],
+          password: body["password"],
+          name:     body["name"]
+        )
       )
-      session[:user_id] = user[:id]
-      status 201
-      json user: user
-    rescue Basic4::ValidationError => e
-      status 422
-      json error: e.message, field: e.field
+      respond_with(result, success_status: 201) do |user|
+        session[:user_id] = user[:id]
+        json user: user
+      end
     end
 
     post "/api/login" do
       body = json_body
-      user = Basic4::Identity::Authentication.call(email: body["email"], password: body["password"])
-      session[:user_id] = user[:id]
-      json user: user
-    rescue Basic4::ValidationError => e
-      status 401
-      json error: e.message, field: e.field
+      result = Basic4::Identity::Authentication.call(
+        Basic4::Identity::Inputs::Login.new(email: body["email"], password: body["password"])
+      )
+      respond_with(result, failure_status: 401) do |user|
+        session[:user_id] = user[:id]
+        json user: user
+      end
     end
 
     post "/api/password/forgot" do
       body = json_body
-      Basic4::Identity::PasswordReset.request(body["email"])
+      Basic4::Identity::PasswordReset.request(
+        Basic4::Identity::Inputs::PasswordResetRequest.new(email: body["email"])
+      )
       json ok: true
     end
 
     post "/api/password/reset" do
       body = json_body
-      Basic4::Identity::PasswordReset.reset(token: body["token"], new_password: body["new_password"])
-      json ok: true
-    rescue Basic4::ValidationError => e
-      status 422
-      json error: e.message, field: e.field
+      result = Basic4::Identity::PasswordReset.reset(
+        Basic4::Identity::Inputs::PasswordResetSubmit.new(
+          token: body["token"], new_password: body["new_password"]
+        )
+      )
+      respond_with(result) { json ok: true }
     end
 
     patch "/api/profile" do
       require_user!
       body = json_body
-      user = Basic4::Identity::Profile.update(
+      result = Basic4::Identity::Profile.update(
         session[:user_id],
-        name:             body["name"],
-        email:            body["email"],
-        current_password: body["current_password"],
-        new_password:     body["new_password"]
+        Basic4::Identity::Inputs::ProfileUpdate.new(
+          name:             body["name"],
+          email:            body["email"],
+          current_password: body["current_password"],
+          new_password:     body["new_password"]
+        )
       )
-      json user: user
-    rescue Basic4::ValidationError => e
-      status 422
-      json error: e.message, field: e.field
+      respond_with(result) { |user| json user: user }
     end
 
     post "/api/onboarding/verify-email" do
       require_user!
       body = json_body
-      user = Basic4::Onboarding::EmailVerification.verify(session[:user_id], token: body["token"])
-      json user: user
-    rescue Basic4::ValidationError => e
-      status 422
-      json error: e.message, field: e.field
+      result = Basic4::Onboarding::EmailVerification.verify(session[:user_id], token: body["token"])
+      respond_with(result) { |user| json user: user }
     end
 
     post "/api/onboarding/resend-token" do
       require_user!
-      user = Basic4::Onboarding::EmailVerification.resend(session[:user_id])
-      json user: user
-    rescue Basic4::ValidationError => e
-      status 422
-      json error: e.message, field: e.field
+      result = Basic4::Onboarding::EmailVerification.resend(session[:user_id])
+      respond_with(result) { |user| json user: user }
     end
 
     post "/api/onboarding/credit-score" do
       require_user!
       body = json_body
-      user = Basic4::Onboarding::CreditScoring.save(
+      result = Basic4::Onboarding::CreditScoring.save(
         session[:user_id],
         income:        body["income"],
         employment:    body["employment"],
         debt:          body["debt"],
         history_years: body["history_years"]
       )
-      json user: user
-    rescue Basic4::ValidationError => e
-      status 422
-      json error: e.message, field: e.field
+      respond_with(result) { |user| json user: user }
     end
 
     post "/api/signout" do

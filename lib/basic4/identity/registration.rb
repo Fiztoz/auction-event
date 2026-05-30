@@ -1,75 +1,75 @@
-require_relative "../errors"
+require_relative "../result"
 require_relative "user"
-require_relative "ports/user_repository"
-require_relative "adapters/mongo_user_repository"
-require_relative "adapters/bcrypt_password_hasher"
-require_relative "adapters/secure_random_token_generator"
-require_relative "adapters/stdout_notifier"
-require_relative "adapters/system_clock"
+require_relative "inputs"
+require_relative "ports"
+require_relative "adapters"
 
-module Basic4
-  module Identity
-    class Registration
-      def initialize(user_repository:, password_hasher:, token_generator:, notifier:, clock:)
-        @user_repository = user_repository
-        @password_hasher = password_hasher
-        @token_generator = token_generator
-        @notifier        = notifier
-        @clock           = clock
-      end
+module Basic4; module Identity; end; end
 
-      def self.default
-        new(
-          user_repository: Adapters::MongoUserRepository.new,
-          password_hasher: Adapters::BcryptPasswordHasher.new,
-          token_generator: Adapters::SecureRandomTokenGenerator.new,
-          notifier:        Adapters::StdoutNotifier.new,
-          clock:           Adapters::SystemClock.new
-        )
-      end
+module Basic4::Identity::Registration
+  module_function
 
-      def self.signup(email:, password:, name:)
-        default.signup(email: email, password: password, name: name)
-      end
+  def signup(input,
+             repo:     Basic4::Identity::Adapters::MongoUserRepo,
+             hasher:   Basic4::Identity::Adapters::BcryptHasher,
+             tokens:   Basic4::Identity::Adapters::SecureRandomTokens,
+             notifier: Basic4::Identity::Adapters::StdoutNotifier,
+             clock:    Basic4::Identity::Adapters::SystemClock)
+    validate(normalize(input))
+      .map    { |i| build_doc(i, hasher: hasher, tokens: tokens, clock: clock) }
+      .bind   { |d| store(d, repo: repo) }
+      .tap_ok { |d| notify_token(d, notifier: notifier) }
+      .map    { |d| Basic4::Identity::User.public_view(d) }
+  end
 
-      def signup(email:, password:, name:)
-        email = email.to_s.strip.downcase
-        name  = name.to_s.strip
-        unless email.match?(User::EMAIL_REGEX)
-          raise Basic4::ValidationError.new(:email, "invalid email")
-        end
-        if password.to_s.length < User::MIN_PASSWORD_LENGTH
-          raise Basic4::ValidationError.new(:password, "password must be #{User::MIN_PASSWORD_LENGTH}+ chars")
-        end
-        raise Basic4::ValidationError.new(:name, "name required") if name.empty?
+  def normalize(input)
+    Basic4::Identity::Inputs::Signup.new(
+      email:    input.email.to_s.strip.downcase,
+      password: input.password.to_s,
+      name:     input.name.to_s.strip
+    )
+  end
 
-        now   = @clock.now
-        token = @token_generator.email_token
-        doc = {
-          _id: @token_generator.user_id,
-          email: email,
-          name: name,
-          password_hash: @password_hasher.hash(password),
-          step: "verify_email",
-          email_verification: {
-            token: token,
-            expires_at: now + User::TOKEN_TTL_SECONDS,
-            verified_at: nil
-          },
-          credit_score: nil,
-          created_at: now,
-          updated_at: now
-        }
-
-        begin
-          @user_repository.insert(doc)
-        rescue Ports::UserRepository::DuplicateEmail
-          raise Basic4::ValidationError.new(:email, "email already registered")
-        end
-
-        @notifier.email_verification_token(email, token)
-        User.public_view(doc)
-      end
+  def validate(input)
+    unless input.email.match?(Basic4::Identity::User::EMAIL_REGEX)
+      return Basic4::Result.failure(:email, "invalid email")
     end
+    if input.password.length < Basic4::Identity::User::MIN_PASSWORD_LENGTH
+      return Basic4::Result.failure(:password, "password must be #{Basic4::Identity::User::MIN_PASSWORD_LENGTH}+ chars")
+    end
+    return Basic4::Result.failure(:name, "name required") if input.name.empty?
+    Basic4::Result.success(input)
+  end
+
+  def build_doc(input, hasher:, tokens:, clock:)
+    now   = clock.now
+    token = tokens.email_token
+    {
+      _id: tokens.user_id,
+      email: input.email,
+      name: input.name,
+      password_hash: hasher.hash(input.password),
+      step: "verify_email",
+      email_verification: {
+        token: token,
+        expires_at: now + Basic4::Identity::User::TOKEN_TTL_SECONDS,
+        verified_at: nil
+      },
+      credit_score: nil,
+      created_at: now,
+      updated_at: now
+    }
+  end
+
+  def store(doc, repo:)
+    repo.insert(doc)
+    Basic4::Result.success(doc)
+  rescue Basic4::Identity::Ports::UserRepository::DuplicateEmail
+    Basic4::Result.failure(:email, "email already registered")
+  end
+
+  def notify_token(doc, notifier:)
+    ev = doc[:email_verification]
+    notifier.email_verification_token(doc[:email], ev[:token])
   end
 end

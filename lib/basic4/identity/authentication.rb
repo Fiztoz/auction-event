@@ -1,39 +1,29 @@
-require_relative "../errors"
+require_relative "../result"
 require_relative "user"
-require_relative "adapters/mongo_user_repository"
-require_relative "adapters/bcrypt_password_hasher"
+require_relative "inputs"
+require_relative "adapters"
 
-module Basic4
-  module Identity
-    class Authentication
-      def initialize(user_repository:, password_hasher:)
-        @user_repository = user_repository
-        @password_hasher = password_hasher
-      end
+module Basic4; module Identity; end; end
 
-      def self.default
-        new(
-          user_repository: Adapters::MongoUserRepository.new,
-          password_hasher: Adapters::BcryptPasswordHasher.new
-        )
-      end
+module Basic4::Identity::Authentication
+  module_function
 
-      def self.call(email:, password:)
-        default.call(email: email, password: password)
-      end
+  def call(input,
+           repo:   Basic4::Identity::Adapters::MongoUserRepo,
+           hasher: Basic4::Identity::Adapters::BcryptHasher)
+    normalized = Basic4::Identity::Inputs::Login.new(
+      email:    input.email.to_s.strip.downcase,
+      password: input.password.to_s
+    )
 
-      def call(email:, password:)
-        email = email.to_s.strip.downcase
-        doc = @user_repository.find_by_email(email)
-        raise Basic4::ValidationError.new(:credentials, "invalid email or password") unless doc
+    doc = repo.find_by_email(normalized.email)
+    return Basic4::Result.failure(:credentials, "invalid email or password") unless doc
 
-        hash = doc["password_hash"] || doc[:password_hash]
-        unless @password_hasher.verify(password.to_s, hash)
-          raise Basic4::ValidationError.new(:credentials, "invalid email or password")
-        end
-
-        User.public_view(doc)
-      end
+    hash = doc["password_hash"] || doc[:password_hash]
+    unless hasher.verify(normalized.password, hash)
+      return Basic4::Result.failure(:credentials, "invalid email or password")
     end
+
+    Basic4::Result.success(Basic4::Identity::User.public_view(doc))
   end
 end
