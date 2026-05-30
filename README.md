@@ -115,10 +115,13 @@ All HTTP routes live in `app.rb`; only the services move into modules.
 ├── public/
 │   ├── css/style.css                      Coinbase-themed styles
 │   └── js/                                Vue 3 SPA as native ES modules
-│       ├── app.js                         Entry — mounts App, routes by step + authMode
+│       ├── app.js                         Entry — installs subscribers, mounts App, routes by step + authMode
 │       ├── api.js                         fetch wrapper + STEPS constant
 │       ├── store.js                       Reactive state singleton + form helpers
-│       ├── actions.js                     All side-effecting actions (auth, password reset, onboarding, profile)
+│       ├── actions.js                     Side-effecting actions; emits domain events on each success
+│       ├── events.js                      Tiny pub/sub bus — on(fn), emit(name, payload)
+│       ├── subscribers/
+│       │   └── console-logger.js          install() registers a console.log listener for every event
 │       └── components/                    One screen per file
 │           ├── signup-screen.js
 │           ├── login-screen.js

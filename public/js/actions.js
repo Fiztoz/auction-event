@@ -1,5 +1,6 @@
 import { api } from "./api.js";
 import { state, clearMessages, resetAuthForm } from "./store.js";
+import { emit } from "./events.js";
 
 const submit = async (path, payload, opts = {}) => {
   state.submitting = true;
@@ -7,7 +8,7 @@ const submit = async (path, payload, opts = {}) => {
   try {
     const { user } = await api(path, { method: opts.method || "POST", body: payload });
     state.user = user;
-    if (opts.onSuccess) opts.onSuccess();
+    if (opts.onSuccess) opts.onSuccess(user);
   } catch (e) {
     state.error = e.message;
   } finally {
@@ -21,6 +22,7 @@ export const refreshMe = async () => {
   try {
     const { user } = await api("/api/me");
     state.user = user;
+    emit("SessionResumed", { userId: user.id, step: user.step });
   } catch (_) {
     state.user = null;
   } finally {
@@ -34,16 +36,21 @@ export const signout = async () => {
   state.view = "dashboard";
   state.authMode = "login";
   resetAuthForm();
+  emit("UserSignedOut", {});
 };
 
 // ── auth ────────────────────────────────────────────────────────────
 
 export const signup = () => submit("/api/signup", {
   email: state.form.email, password: state.form.password, name: state.form.name
+}, {
+  onSuccess: (user) => emit("UserSignedUp", { userId: user.id, email: user.email })
 });
 
 export const login = () => submit("/api/login", {
   email: state.form.email, password: state.form.password
+}, {
+  onSuccess: (user) => emit("UserAuthenticated", { userId: user.id, email: user.email, step: user.step })
 });
 
 export const switchToLogin  = () => { state.authMode = "login";  clearMessages(); };
@@ -67,6 +74,7 @@ export const requestPasswordReset = async () => {
     });
     state.authMode = "password_reset";
     state.info = "If an account exists for that email, a reset token has been issued. Check the server logs.";
+    emit("PasswordResetRequested", {});
   } catch (e) {
     state.error = e.message;
   } finally {
@@ -89,6 +97,7 @@ export const resetPassword = async () => {
     state.info = "Password updated. You can sign in with your new password.";
     state.form.reset_token = "";
     state.form.reset_new_password = "";
+    emit("PasswordResetCompleted", {});
   } catch (e) {
     state.error = e.message;
   } finally {
@@ -100,6 +109,8 @@ export const resetPassword = async () => {
 
 export const verifyEmail = () => submit("/api/onboarding/verify-email", {
   token: state.form.token
+}, {
+  onSuccess: (user) => emit("EmailVerified", { userId: user.id })
 });
 
 export const resendToken = async () => {
@@ -108,6 +119,7 @@ export const resendToken = async () => {
   try {
     await api("/api/onboarding/resend-token", { method: "POST" });
     state.info = "A new code has been issued — check the server logs.";
+    emit("VerificationTokenResent", {});
   } catch (e) {
     state.error = e.message;
   } finally {
@@ -120,6 +132,11 @@ export const submitCreditScore = () => submit("/api/onboarding/credit-score", {
   employment:    state.form.employment,
   debt:          Number(state.form.debt),
   history_years: Number(state.form.history_years)
+}, {
+  onSuccess: (user) => emit("CreditScoreComputed", {
+    userId: user.id,
+    score:  user.credit_score?.score
+  })
 });
 
 // ── profile ─────────────────────────────────────────────────────────
@@ -152,11 +169,13 @@ export const saveProfile = () => {
   if (state.form.edit_current_password) {
     payload.current_password = state.form.edit_current_password;
   }
+  const changedFields = Object.keys(payload).filter((k) => k !== "current_password");
   return submit("/api/profile", payload, {
     method: "PATCH",
-    onSuccess: () => {
+    onSuccess: (user) => {
       state.view = "dashboard";
       state.info = "Profile updated.";
+      emit("ProfileUpdated", { userId: user.id, changedFields });
     }
   });
 };

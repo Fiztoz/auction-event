@@ -1,5 +1,6 @@
 import { state } from "./store.js";
 import { refreshMe } from "./actions.js";
+import { install as installConsoleLogger } from "./subscribers/console-logger.js";
 import { SignupScreen } from "./components/signup-screen.js";
 import { LoginScreen } from "./components/login-screen.js";
 import { PasswordForgotScreen } from "./components/password-forgot-screen.js";
@@ -45,5 +46,7 @@ const App = {
     <dashboard-screen       v-else-if="step === 'done'" />
   `
 };
+
+installConsoleLogger();
 
 createApp(App).mount("#app");
