@@ -3,6 +3,7 @@ source "https://rubygems.org"
 ruby "4.0.5"
 
 gem "csv"
+gem "bigdecimal"
 gem "sinatra"
 gem "sinatra-contrib"
 gem "puma"

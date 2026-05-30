@@ -71,6 +71,47 @@ module Basic4
       json error: e.message, field: e.field
     end
 
+    post "/api/login" do
+      body = json_body
+      user = Basic4::User.authenticate(email: body["email"], password: body["password"])
+      session[:user_id] = user[:id]
+      json user: user
+    rescue Basic4::User::ValidationError => e
+      status 401
+      json error: e.message, field: e.field
+    end
+
+    post "/api/password/forgot" do
+      body = json_body
+      Basic4::User.request_password_reset(body["email"])
+      json ok: true
+    end
+
+    post "/api/password/reset" do
+      body = json_body
+      Basic4::User.reset_password(token: body["token"], new_password: body["new_password"])
+      json ok: true
+    rescue Basic4::User::ValidationError => e
+      status 422
+      json error: e.message, field: e.field
+    end
+
+    patch "/api/profile" do
+      require_user!
+      body = json_body
+      user = Basic4::User.update_profile(
+        session[:user_id],
+        name:             body["name"],
+        email:            body["email"],
+        current_password: body["current_password"],
+        new_password:     body["new_password"]
+      )
+      json user: user
+    rescue Basic4::User::ValidationError => e
+      status 422
+      json error: e.message, field: e.field
+    end
+
     post "/api/onboarding/verify-email" do
       require_user!
       body = json_body
