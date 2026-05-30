@@ -85,26 +85,53 @@ All responses are JSON. Validation failures return `422` with `{ error, field }`
 
 ## Project layout
 
+The web app is a modular monolith — bounded domain modules with one-way
+dependencies (`Onboarding → Identity → Core`, plus `Onboarding → Scoring`).
+All HTTP routes live in `app.rb`; only the services move into modules.
+
 ```
 .
-├── app.rb                          Sinatra app + JSON routes
-├── config.ru                       Rack entry
+├── app.rb                                 Sinatra routing shell
+├── config.ru                              Rack entry
 ├── lib/
-│   ├── basic4.rb                   Library module (greet / parallel_greet / report)
+│   ├── basic4.rb                          Library module (greet / parallel_greet / report)
 │   └── basic4/
-│       ├── db.rb                   Mongo client + index setup
-│       ├── user.rb                 Onboarding state machine
-│       └── credit_scoring.rb       Pure scoring + input validation
-├── views/index.erb                 Vue 3 mount + Inter font
+│       ├── db.rb                          Mongo client + index setup
+│       ├── errors.rb                      Basic4::ValidationError (shared)
+│       ├── scoring.rb                     Basic4::Scoring — pure score calculator
+│       ├── identity/                      Domain services follow ports & adapters
+│       │   ├── user.rb                    Shared constants, find, public_view, token helpers
+│       │   ├── registration.rb            signup (class + .default + .signup shim)
+│       │   ├── authentication.rb          login (class + .default + .call shim)
+│       │   ├── profile.rb                 update name / email / password (class + .default + .update shim)
+│       │   ├── password_reset.rb          request + reset (class + .default + class-method shims)
+│       │   ├── ports/                     Documented interfaces (DuplicateEmail lives here)
+│       │   │   ├── user_repository.rb
+│       │   │   ├── password_hasher.rb
+│       │   │   ├── token_generator.rb
+│       │   │   ├── notifier.rb
+│       │   │   └── clock.rb
+│       │   └── adapters/                  Concrete implementations
+│       │       ├── mongo_user_repository.rb
+│       │       ├── bcrypt_password_hasher.rb
+│       │       ├── secure_random_token_generator.rb
+│       │       ├── stdout_notifier.rb
+│       │       └── system_clock.rb
+│       └── onboarding/
+│           ├── email_verification.rb      .verify and .resend
+│           └── credit_scoring.rb          .save (persists scoring result)
+├── views/index.erb                        Vue 3 mount + Inter font
 ├── public/
-│   ├── css/style.css               Coinbase-themed styles
-│   └── js/app.js                   Vue 3 SPA (4-step wizard)
+│   ├── css/style.css                      Coinbase-themed styles
+│   └── js/app.js                          Vue 3 SPA (4-step wizard + auth + dashboard)
 ├── test/
-│   ├── test_basic4.rb              Library tests
-│   ├── test_credit_scoring.rb      Scorer unit tests
-│   └── test_onboarding_app.rb      End-to-end API tests
-├── Dockerfile                      ruby:4.0.5-slim image
-├── docker-compose.yml              app + mongo + healthcheck
+│   ├── test_helper.rb                     Shared rack-test setup + helpers
+│   ├── test_basic4.rb                     Library tests
+│   ├── test_scoring.rb                    Scoring engine unit tests
+│   ├── test_identity.rb                   Signup, login, profile, password reset
+│   └── test_onboarding.rb                 Verify-email, resend, credit-score step
+├── Dockerfile                             ruby:4.0.5-slim image
+├── docker-compose.yml                     app + mongo + healthcheck
 └── .env.example
 ```
 

@@ -4,7 +4,15 @@ require "json"
 require "dotenv/load" if File.exist?(File.expand_path("../.env", __FILE__))
 
 require_relative "lib/basic4/db"
-require_relative "lib/basic4/user"
+require_relative "lib/basic4/errors"
+require_relative "lib/basic4/scoring"
+require_relative "lib/basic4/identity/user"
+require_relative "lib/basic4/identity/registration"
+require_relative "lib/basic4/identity/authentication"
+require_relative "lib/basic4/identity/profile"
+require_relative "lib/basic4/identity/password_reset"
+require_relative "lib/basic4/onboarding/email_verification"
+require_relative "lib/basic4/onboarding/credit_scoring"
 
 module Basic4
   class OnboardingApp < Sinatra::Base
@@ -31,7 +39,7 @@ module Basic4
 
       def current_user
         return nil unless session[:user_id]
-        Basic4::User.find(session[:user_id])
+        Basic4::Identity::User.find(session[:user_id])
       end
 
       def require_user!
@@ -58,40 +66,40 @@ module Basic4
 
     post "/api/signup" do
       body = json_body
-      user = Basic4::User.signup(
-        email: body["email"],
+      user = Basic4::Identity::Registration.signup(
+        email:    body["email"],
         password: body["password"],
-        name: body["name"]
+        name:     body["name"]
       )
       session[:user_id] = user[:id]
       status 201
       json user: user
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 422
       json error: e.message, field: e.field
     end
 
     post "/api/login" do
       body = json_body
-      user = Basic4::User.authenticate(email: body["email"], password: body["password"])
+      user = Basic4::Identity::Authentication.call(email: body["email"], password: body["password"])
       session[:user_id] = user[:id]
       json user: user
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 401
       json error: e.message, field: e.field
     end
 
     post "/api/password/forgot" do
       body = json_body
-      Basic4::User.request_password_reset(body["email"])
+      Basic4::Identity::PasswordReset.request(body["email"])
       json ok: true
     end
 
     post "/api/password/reset" do
       body = json_body
-      Basic4::User.reset_password(token: body["token"], new_password: body["new_password"])
+      Basic4::Identity::PasswordReset.reset(token: body["token"], new_password: body["new_password"])
       json ok: true
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 422
       json error: e.message, field: e.field
     end
@@ -99,7 +107,7 @@ module Basic4
     patch "/api/profile" do
       require_user!
       body = json_body
-      user = Basic4::User.update_profile(
+      user = Basic4::Identity::Profile.update(
         session[:user_id],
         name:             body["name"],
         email:            body["email"],
@@ -107,7 +115,7 @@ module Basic4
         new_password:     body["new_password"]
       )
       json user: user
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 422
       json error: e.message, field: e.field
     end
@@ -115,18 +123,18 @@ module Basic4
     post "/api/onboarding/verify-email" do
       require_user!
       body = json_body
-      user = Basic4::User.verify_email_token(session[:user_id], token: body["token"])
+      user = Basic4::Onboarding::EmailVerification.verify(session[:user_id], token: body["token"])
       json user: user
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 422
       json error: e.message, field: e.field
     end
 
     post "/api/onboarding/resend-token" do
       require_user!
-      user = Basic4::User.resend_token(session[:user_id])
+      user = Basic4::Onboarding::EmailVerification.resend(session[:user_id])
       json user: user
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 422
       json error: e.message, field: e.field
     end
@@ -134,7 +142,7 @@ module Basic4
     post "/api/onboarding/credit-score" do
       require_user!
       body = json_body
-      user = Basic4::User.save_credit_score(
+      user = Basic4::Onboarding::CreditScoring.save(
         session[:user_id],
         income:        body["income"],
         employment:    body["employment"],
@@ -142,7 +150,7 @@ module Basic4
         history_years: body["history_years"]
       )
       json user: user
-    rescue Basic4::User::ValidationError => e
+    rescue Basic4::ValidationError => e
       status 422
       json error: e.message, field: e.field
     end

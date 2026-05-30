@@ -1,5 +1,5 @@
 module Basic4
-  module CreditScoring
+  module Scoring
     EMPLOYMENT_POINTS = {
       "employed"      => 50,
       "self_employed" => 30,
