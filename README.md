@@ -120,10 +120,23 @@ All HTTP routes live in `app.rb`; only the services move into modules.
 │       └── onboarding/
 │           ├── email_verification.rb      .verify and .resend
 │           └── credit_scoring.rb          .save (persists scoring result)
-├── views/index.erb                        Vue 3 mount + Inter font
+├── views/index.erb                        Vue 3 mount + Inter font (loads app.js as ES module)
 ├── public/
 │   ├── css/style.css                      Coinbase-themed styles
-│   └── js/app.js                          Vue 3 SPA (4-step wizard + auth + dashboard)
+│   └── js/                                Vue 3 SPA as native ES modules
+│       ├── app.js                         Entry — mounts App, routes by step + authMode
+│       ├── api.js                         fetch wrapper + STEPS constant
+│       ├── store.js                       Reactive state singleton + form helpers
+│       ├── actions.js                     All side-effecting actions (auth, password reset, onboarding, profile)
+│       └── components/                    One screen per file
+│           ├── signup-screen.js
+│           ├── login-screen.js
+│           ├── password-forgot-screen.js
+│           ├── password-reset-screen.js
+│           ├── verify-email-screen.js
+│           ├── credit-scoring-screen.js
+│           ├── edit-profile-screen.js
+│           └── dashboard-screen.js
 ├── test/
 │   ├── test_helper.rb                     Shared rack-test setup + helpers
 │   ├── test_basic4.rb                     Library tests
