@@ -99,15 +99,30 @@ All HTTP routes live in `app.rb`; only the services move into modules.
 │       ├── db.rb                          Mongo client + index setup
 │       ├── result.rb                      Basic4::Result — Success/Failure (Data), Chain mixin (bind/map/tap_ok)
 │       ├── scoring.rb                     Basic4::Scoring — pure score calculator
-│       ├── identity/                      Functional services + ports & adapters
-│       │   ├── user.rb                    Shared constants, find, public_view, token helpers
-│       │   ├── inputs.rb                  Data.define value objects (Signup, Login, ProfileUpdate, …)
-│       │   ├── ports.rb                   Consolidated port docstrings + DuplicateEmail
-│       │   ├── adapters.rb                Consolidated adapter MODULES (MongoUserRepo, BcryptHasher, SecureRandomTokens, StdoutNotifier, SystemClock)
-│       │   ├── registration.rb            signup — module_function + .then pipeline
-│       │   ├── authentication.rb          .call — module_function + small composed helpers
-│       │   ├── profile.rb                 update — module_function + procedural composition over conditional changes
-│       │   └── password_reset.rb          .request + .reset — module_function + pipelines
+│       ├── identity/                      Hexagonal / DDD-style layout
+│       │   ├── domain/
+│       │   │   └── user.rb                User aggregate (Data.define) + EmailVerification, CreditScoreSnapshot, PasswordReset value objects; constants; behavior methods returning Result<User>
+│       │   ├── application/               Use cases — thin orchestrators on top of the domain
+│       │   │   ├── inputs.rb              Frozen Data.define DTOs (Signup, Login, ProfileUpdate, …)
+│       │   │   ├── user_presenter.rb      Domain::User → public Hash for JSON responses
+│       │   │   ├── register_user.rb       .call(input, container:)
+│       │   │   ├── authenticate_user.rb   .call(input, container:)
+│       │   │   ├── update_profile.rb      .call(user_id, input, container:)
+│       │   │   ├── request_password_reset.rb  Boolean return, no leak
+│       │   │   └── reset_password.rb      .call(input, container:)
+│       │   ├── ports/                     Abstract interfaces (DuplicateEmail lives here)
+│       │   │   ├── user_repository.rb
+│       │   │   ├── password_hasher.rb
+│       │   │   ├── token_generator.rb
+│       │   │   ├── notifier.rb
+│       │   │   └── clock.rb
+│       │   ├── infrastructure/            Concrete adapters — only place that knows Mongo / BCrypt / SecureRandom / $stdout / Time
+│       │   │   ├── mongo_user_repository.rb
+│       │   │   ├── bcrypt_password_hasher.rb
+│       │   │   ├── secure_random_token_generator.rb
+│       │   │   ├── stdout_notifier.rb
+│       │   │   └── system_clock.rb
+│       │   └── container.rb               Composition root — Container.production returns the port→adapter map
 │       └── onboarding/
 │           ├── email_verification.rb      .verify and .resend
 │           └── credit_scoring.rb          .save (persists scoring result)

@@ -6,12 +6,14 @@ require "dotenv/load" if File.exist?(File.expand_path("../.env", __FILE__))
 require_relative "lib/basic4/db"
 require_relative "lib/basic4/result"
 require_relative "lib/basic4/scoring"
-require_relative "lib/basic4/identity/user"
-require_relative "lib/basic4/identity/inputs"
-require_relative "lib/basic4/identity/registration"
-require_relative "lib/basic4/identity/authentication"
-require_relative "lib/basic4/identity/profile"
-require_relative "lib/basic4/identity/password_reset"
+require_relative "lib/basic4/identity/container"
+require_relative "lib/basic4/identity/application/inputs"
+require_relative "lib/basic4/identity/application/user_presenter"
+require_relative "lib/basic4/identity/application/register_user"
+require_relative "lib/basic4/identity/application/authenticate_user"
+require_relative "lib/basic4/identity/application/update_profile"
+require_relative "lib/basic4/identity/application/request_password_reset"
+require_relative "lib/basic4/identity/application/reset_password"
 require_relative "lib/basic4/onboarding/email_verification"
 require_relative "lib/basic4/onboarding/credit_scoring"
 
@@ -22,6 +24,10 @@ module Basic4
     set :views, File.expand_path("../views", __FILE__)
     enable :sessions
     set :session_secret, ENV.fetch("SESSION_SECRET", SecureRandom.hex(32))
+
+    Inputs   = Basic4::Identity::Application::Inputs
+    Identity = Basic4::Identity::Application
+    Present  = Basic4::Identity::Application::UserPresenter
 
     configure :production, :development do
       begin
@@ -40,7 +46,7 @@ module Basic4
 
       def current_user
         return nil unless session[:user_id]
-        Basic4::Identity::User.find(session[:user_id])
+        Basic4::Identity::Container.production[:user_repository].find_by_id(session[:user_id])
       end
 
       def require_user!
@@ -73,49 +79,43 @@ module Basic4
     get "/api/me" do
       user = current_user
       halt 401, json(error: "not signed in") unless user
-      json user: user
+      json user: Present.call(user)
     end
 
     post "/api/signup" do
       body = json_body
-      result = Basic4::Identity::Registration.signup(
-        Basic4::Identity::Inputs::Signup.new(
-          email:    body["email"],
-          password: body["password"],
-          name:     body["name"]
-        )
+      result = Identity::RegisterUser.call(
+        Inputs::Signup.new(email: body["email"], password: body["password"], name: body["name"])
       )
       respond_with(result, success_status: 201) do |user|
-        session[:user_id] = user[:id]
-        json user: user
+        session[:user_id] = user.id
+        json user: Present.call(user)
       end
     end
 
     post "/api/login" do
       body = json_body
-      result = Basic4::Identity::Authentication.call(
-        Basic4::Identity::Inputs::Login.new(email: body["email"], password: body["password"])
+      result = Identity::AuthenticateUser.call(
+        Inputs::Login.new(email: body["email"], password: body["password"])
       )
       respond_with(result, failure_status: 401) do |user|
-        session[:user_id] = user[:id]
-        json user: user
+        session[:user_id] = user.id
+        json user: Present.call(user)
       end
     end
 
     post "/api/password/forgot" do
       body = json_body
-      Basic4::Identity::PasswordReset.request(
-        Basic4::Identity::Inputs::PasswordResetRequest.new(email: body["email"])
+      Identity::RequestPasswordReset.call(
+        Inputs::PasswordResetRequest.new(email: body["email"])
       )
       json ok: true
     end
 
     post "/api/password/reset" do
       body = json_body
-      result = Basic4::Identity::PasswordReset.reset(
-        Basic4::Identity::Inputs::PasswordResetSubmit.new(
-          token: body["token"], new_password: body["new_password"]
-        )
+      result = Identity::ResetPassword.call(
+        Inputs::PasswordResetSubmit.new(token: body["token"], new_password: body["new_password"])
       )
       respond_with(result) { json ok: true }
     end
@@ -123,29 +123,29 @@ module Basic4
     patch "/api/profile" do
       require_user!
       body = json_body
-      result = Basic4::Identity::Profile.update(
+      result = Identity::UpdateProfile.call(
         session[:user_id],
-        Basic4::Identity::Inputs::ProfileUpdate.new(
+        Inputs::ProfileUpdate.new(
           name:             body["name"],
           email:            body["email"],
           current_password: body["current_password"],
           new_password:     body["new_password"]
         )
       )
-      respond_with(result) { |user| json user: user }
+      respond_with(result) { |user| json user: Present.call(user) }
     end
 
     post "/api/onboarding/verify-email" do
       require_user!
       body = json_body
       result = Basic4::Onboarding::EmailVerification.verify(session[:user_id], token: body["token"])
-      respond_with(result) { |user| json user: user }
+      respond_with(result) { |user| json user: Present.call(user) }
     end
 
     post "/api/onboarding/resend-token" do
       require_user!
       result = Basic4::Onboarding::EmailVerification.resend(session[:user_id])
-      respond_with(result) { |user| json user: user }
+      respond_with(result) { |user| json user: Present.call(user) }
     end
 
     post "/api/onboarding/credit-score" do
@@ -158,7 +158,7 @@ module Basic4
         debt:          body["debt"],
         history_years: body["history_years"]
       )
-      respond_with(result) { |user| json user: user }
+      respond_with(result) { |user| json user: Present.call(user) }
     end
 
     post "/api/signout" do
