@@ -71,6 +71,7 @@ bundle exec rackup -p 4567    # or: rake server
 
 | Method | Path                              | Auth      | Body                                            |
 |--------|-----------------------------------|-----------|-------------------------------------------------|
+| POST   | `/api/check-existing`             | none      | `{ email }` → `{ exists: Boolean }`             |
 | POST   | `/api/signup`                     | none      | `{ email, password, name }`                     |
 | POST   | `/api/onboarding/verify-email`    | session   | `{ token }`                                     |
 | POST   | `/api/onboarding/resend-token`    | session   | —                                               |
@@ -85,32 +86,26 @@ All responses are JSON. Validation failures return `422` with `{ error, field }`
 
 ## Project layout
 
-The web app is a modular monolith — bounded domain modules with one-way
-dependencies (`Onboarding → Identity → Core`, plus `Onboarding → Scoring`).
-All HTTP routes live in `app.rb`; only the services move into modules.
+The web app is organized as **five sub-domains** (bounded contexts) on top of a
+single hexagonal **shared kernel**. The kernel owns cross-cutting concerns —
+the `Basic4::User` aggregate, `Basic4::Result`, the Mongo connection, ports, and
+production adapters — while each sub-domain owns its own use cases. All HTTP
+routes live in `app.rb`.
 
 ```
 .
-├── app.rb                                 Sinatra routing shell
+├── app.rb                                 Sinatra routing shell + respond_with helper
 ├── config.ru                              Rack entry
 ├── lib/
 │   ├── basic4.rb                          Library module (greet / parallel_greet / report)
 │   └── basic4/
-│       ├── db.rb                          Mongo client + index setup
-│       ├── result.rb                      Basic4::Result — Success/Failure (Data), Chain mixin (bind/map/tap_ok)
-│       ├── scoring.rb                     Basic4::Scoring — pure score calculator
-│       ├── identity/                      Hexagonal / DDD-style layout
-│       │   ├── domain/
-│       │   │   └── user.rb                User aggregate (Data.define) + EmailVerification, CreditScoreSnapshot, PasswordReset value objects; constants; behavior methods returning Result<User>
-│       │   ├── application/               Use cases — thin orchestrators on top of the domain
-│       │   │   ├── inputs.rb              Frozen Data.define DTOs (Signup, Login, ProfileUpdate, …)
-│       │   │   ├── user_presenter.rb      Domain::User → public Hash for JSON responses
-│       │   │   ├── register_user.rb       .call(input, container:)
-│       │   │   ├── authenticate_user.rb   .call(input, container:)
-│       │   │   ├── update_profile.rb      .call(user_id, input, container:)
-│       │   │   ├── request_password_reset.rb  Boolean return, no leak
-│       │   │   └── reset_password.rb      .call(input, container:)
-│       │   ├── ports/                     Abstract interfaces (DuplicateEmail lives here)
+│       ├── shared/                        SHARED KERNEL — Basic4::* top-level types
+│       │   ├── shared.rb                  Namespace index (declares all sub-domain modules)
+│       │   ├── result.rb                  Basic4::Result — Success/Failure + Chain mixin
+│       │   ├── db.rb                      Basic4::DB — Mongo client + index setup
+│       │   ├── user.rb                    Basic4::User aggregate + EmailVerification, CreditScoreSnapshot, PasswordReset value objects; constants; behaviors returning Result<User>
+│       │   ├── user_presenter.rb          Basic4::UserPresenter — Basic4::User → public Hash
+│       │   ├── ports/                     Abstract interfaces (DuplicateEmail lives in user_repository.rb)
 │       │   │   ├── user_repository.rb
 │       │   │   ├── password_hasher.rb
 │       │   │   ├── token_generator.rb
@@ -122,10 +117,31 @@ All HTTP routes live in `app.rb`; only the services move into modules.
 │       │   │   ├── secure_random_token_generator.rb
 │       │   │   ├── stdout_notifier.rb
 │       │   │   └── system_clock.rb
-│       │   └── container.rb               Composition root — Container.production returns the port→adapter map
-│       └── onboarding/
-│           ├── email_verification.rb      .verify and .resend
-│           └── credit_scoring.rb          .save (persists scoring result)
+│       │   └── container.rb               Composition root — Basic4::Container.production returns the port→adapter map
+│       ├── check_existing/                SUB-DOMAIN 1 — pre-signup uniqueness check
+│       │   └── application/
+│       │       ├── inputs.rb              Inputs::CheckEmail
+│       │       └── check_email.rb         .call(input, container:) → Result.success({ exists: Boolean })
+│       ├── register/                      SUB-DOMAIN 2 — signing up
+│       │   └── application/
+│       │       ├── inputs.rb              Inputs::Signup
+│       │       └── register_user.rb       .call(input, container:) — .map/.bind/.tap_ok pipeline
+│       ├── verify_token/                  SUB-DOMAIN 3 — email verification flow
+│       │   └── application/
+│       │       ├── verify_email_token.rb  .call(user_id, token:, container:)
+│       │       └── resend_email_token.rb  .call(user_id, container:)
+│       ├── credit_scoring/                SUB-DOMAIN 4 — credit-score computation
+│       │   ├── domain/scoring.rb          Pure score calculator (Basic4::CreditScoring::Domain::Scoring) + InvalidInput
+│       │   └── application/
+│       │       ├── inputs.rb              Inputs::CreditScoreSubmission
+│       │       └── compute_credit_score.rb
+│       └── identity/                      SUB-DOMAIN 5 — login / profile / password reset
+│           └── application/
+│               ├── inputs.rb              Inputs::Login, ProfileUpdate, PasswordResetRequest, PasswordResetSubmit
+│               ├── authenticate_user.rb
+│               ├── update_profile.rb
+│               ├── request_password_reset.rb     Boolean return, no leak
+│               └── reset_password.rb
 ├── views/index.erb                        Vue 3 mount + Inter font (loads app.js as ES module)
 ├── public/
 │   ├── css/style.css                      Coinbase-themed styles

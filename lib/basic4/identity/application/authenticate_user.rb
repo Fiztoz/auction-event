@@ -1,12 +1,13 @@
-require_relative "../../identity"
-require_relative "../../result"
-require_relative "../container"
+require_relative "../../shared/shared"
+require_relative "../../shared/result"
+require_relative "../../shared/user"
+require_relative "../../shared/container"
 require_relative "inputs"
 
 module Basic4::Identity::Application::AuthenticateUser
   module_function
 
-  def call(input, container: Basic4::Identity::Container.production)
+  def call(input, container: Basic4::Container.production)
     repo   = container[:user_repository]
     hasher = container[:password_hasher]
 

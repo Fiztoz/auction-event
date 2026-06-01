@@ -1,17 +1,14 @@
-require_relative "../../identity"
-require_relative "../../result"
-require_relative "../domain/user"
-require_relative "../ports/user_repository"
-require_relative "../container"
+require_relative "../../shared/shared"
+require_relative "../../shared/result"
+require_relative "../../shared/user"
+require_relative "../../shared/ports/user_repository"
+require_relative "../../shared/container"
 require_relative "inputs"
 
 module Basic4::Identity::Application::UpdateProfile
-  D     = Basic4::Identity::Domain
-  Ports = Basic4::Identity::Ports
-
   module_function
 
-  def call(user_id, input, container: Basic4::Identity::Container.production)
+  def call(user_id, input, container: Basic4::Container.production)
     repo, hasher, tokens, notifier, clock = container.values_at(
       :user_repository, :password_hasher, :tokens, :notifier, :clock
     )
@@ -21,13 +18,13 @@ module Basic4::Identity::Application::UpdateProfile
 
     name_change     = input.name.is_a?(String)         ? input.name        : nil
     email_change    = input.email.is_a?(String)        ? input.email       : nil
-    password_change = input.new_password.is_a?(String) && !input.new_password.empty?
+    changing_password = input.new_password.is_a?(String) && !input.new_password.empty?
 
-    changing_email    = email_change && email_change.strip.downcase != "" && email_change.strip.downcase != user.email
-    changing_password = password_change
+    new_email_normalized = email_change && email_change.strip.downcase
+    changing_email    = new_email_normalized && !new_email_normalized.empty? && new_email_normalized != user.email
 
-    if changing_password && input.new_password.length < D::User::MIN_PASSWORD_LENGTH
-      return Basic4::Result.failure(:new_password, "password must be #{D::User::MIN_PASSWORD_LENGTH}+ chars")
+    if changing_password && input.new_password.length < Basic4::User::MIN_PASSWORD_LENGTH
+      return Basic4::Result.failure(:new_password, "password must be #{Basic4::User::MIN_PASSWORD_LENGTH}+ chars")
     end
 
     if changing_email || changing_password
@@ -61,7 +58,7 @@ module Basic4::Identity::Application::UpdateProfile
 
     begin
       repo.store(user)
-    rescue Ports::UserRepository::DuplicateEmail
+    rescue Basic4::Ports::UserRepository::DuplicateEmail
       return Basic4::Result.failure(:email, "email already registered")
     end
 
