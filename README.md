@@ -89,12 +89,13 @@ All responses are JSON. Validation failures return `422` with `{ error, field }`
 The web app is organized as **five sub-domains** (bounded contexts) on top of a
 single hexagonal **shared kernel**. The kernel owns cross-cutting concerns —
 the `Basic4::User` aggregate, `Basic4::Result`, the Mongo connection, ports, and
-production adapters — while each sub-domain owns its own use cases. All HTTP
-routes live in `app.rb`.
+production adapters — while each sub-domain owns its own use cases. URL →
+handler mapping lives in `routes.rb`; `app.rb` owns Sinatra setup and helpers.
 
 ```
 .
-├── app.rb                                 Sinatra routing shell + respond_with helper
+├── app.rb                                 Sinatra setup + helpers (respond_with, current_user, json_body)
+├── routes.rb                              URL → handler mapping (reopens Basic4::OnboardingApp)
 ├── config.ru                              Rack entry
 ├── lib/
 │   ├── basic4.rb                          Library module (greet / parallel_greet / report)
