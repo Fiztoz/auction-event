@@ -15,7 +15,12 @@ module Basic4::DB
     client[:users]
   end
 
+  def self.products
+    client[:products]
+  end
+
   def self.ensure_indexes!
     users.indexes.create_one({ email: 1 }, unique: true)
+    products.indexes.create_one({ seller_id: 1 })
   end
 end

@@ -8,6 +8,9 @@ require_relative "lib/basic4/shared/db"
 require_relative "lib/basic4/shared/result"
 require_relative "lib/basic4/shared/user"
 require_relative "lib/basic4/shared/user_presenter"
+require_relative "lib/basic4/shared/product"
+require_relative "lib/basic4/shared/product_presenter"
+require_relative "lib/basic4/shared/ports/product_repository"
 require_relative "lib/basic4/shared/container"
 
 require_relative "lib/basic4/check_existing/application/inputs"
@@ -28,6 +31,10 @@ require_relative "lib/basic4/identity/application/update_profile"
 require_relative "lib/basic4/identity/application/request_password_reset"
 require_relative "lib/basic4/identity/application/reset_password"
 
+require_relative "lib/basic4/product_auction/application/inputs"
+require_relative "lib/basic4/product_auction/application/list_product_for_auction"
+require_relative "lib/basic4/product_auction/application/list_my_auctions"
+
 module Basic4
   class OnboardingApp < Sinatra::Base
     set :root, File.expand_path("..", __FILE__)
@@ -37,6 +44,7 @@ module Basic4
     set :session_secret, ENV.fetch("SESSION_SECRET", SecureRandom.hex(32))
 
     Present = Basic4::UserPresenter
+    PresentProduct = Basic4::ProductPresenter
 
     configure :production, :development do
       begin
@@ -44,6 +52,14 @@ module Basic4
       rescue Mongo::Error => e
         warn "[basic4] could not create indexes: #{e.message}"
       end
+    end
+
+    # In development, make the browser revalidate static assets (JS/CSS) instead
+    # of serving a heuristically-cached copy — otherwise front-end edits don't
+    # show on a plain refresh. Sinatra still sends Last-Modified, so unchanged
+    # files come back as cheap 304s. Production keeps its default caching.
+    configure :development do
+      set :static_cache_control, [:no_cache]
     end
 
     helpers do
@@ -60,6 +76,11 @@ module Basic4
 
       def require_user!
         halt 401, json(error: "not signed in") unless session[:user_id]
+      end
+
+      def require_seller!
+        require_user!
+        halt 403, json(error: "complete onboarding first") unless current_user&.step == "done"
       end
 
       def respond_with(result, success_status: 200, failure_status: 422, &on_success)

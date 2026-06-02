@@ -1,9 +1,13 @@
 import { state } from "../store.js";
-import { openEdit, signout } from "../actions.js";
+import { openEdit, signout, openSell, loadMyAuctions } from "../actions.js";
+
+const { onMounted } = Vue;
 
 export const DashboardScreen = {
   setup() {
-    return { state, openEdit, signout };
+    onMounted(loadMyAuctions);
+    const dollars = (cents) => (cents / 100).toFixed(2);
+    return { state, openEdit, signout, openSell, dollars };
   },
   template: `
     <div class="card success">
@@ -25,7 +29,20 @@ export const DashboardScreen = {
         Your credit score: <strong>{{ state.user.credit_score.score }}</strong>
       </p>
       <div v-if="state.info" class="info">{{ state.info }}</div>
-      <button @click="openEdit">Edit profile</button>
+
+      <div class="menu">
+        <button @click="openSell">+ Sell a product at auction</button>
+      </div>
+
+      <div class="auctions" v-if="state.myAuctions.length">
+        <h2>My auctions ({{ state.myAuctions.length }})</h2>
+        <div class="auction-item" v-for="a in state.myAuctions" :key="a.id">
+          <span class="auction-title">{{ a.title }}</span>
+          <span class="auction-meta">\${{ dollars(a.starting_price_cents) }} · {{ a.status }}</span>
+        </div>
+      </div>
+
+      <button type="button" class="link-button" @click="openEdit">Edit profile</button>
       <button type="button" class="link-button" @click="signout">Sign out</button>
     </div>
   `

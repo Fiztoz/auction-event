@@ -87,6 +87,30 @@ module Basic4
       respond_with(result) { |user| json user: Present.call(user) }
     end
 
+    # ── selling ───────────────────────────────────────────────────
+
+    post "/api/products" do
+      require_seller!
+      body = json_body
+      result = Basic4::ProductAuction::Application::ListProductForAuction.call(
+        session[:user_id],
+        Basic4::ProductAuction::Application::Inputs::ListProduct.new(
+          title:                body["title"],
+          description:          body["description"],
+          category:             body["category"],
+          starting_price_cents: body["starting_price_cents"],
+          duration_days:        body["duration_days"]
+        )
+      )
+      respond_with(result, success_status: 201) { |product| json product: PresentProduct.call(product) }
+    end
+
+    get "/api/products/mine" do
+      require_seller!
+      products = Basic4::ProductAuction::Application::ListMyAuctions.call(session[:user_id])
+      json products: products.map { |product| PresentProduct.call(product) }
+    end
+
     # ── account management ────────────────────────────────────────
 
     patch "/api/profile" do

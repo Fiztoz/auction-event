@@ -179,3 +179,56 @@ export const saveProfile = () => {
     }
   });
 };
+
+// ── selling ─────────────────────────────────────────────────────────
+
+export const openSell = () => {
+  state.view = "sell";
+  clearMessages();
+  state.form.product_title = "";
+  state.form.product_description = "";
+  state.form.product_category = "";
+  state.form.product_starting_price = "";
+  state.form.product_duration = "";
+};
+
+export const cancelSell = () => {
+  state.view = "dashboard";
+  clearMessages();
+};
+
+export const loadMyAuctions = async () => {
+  try {
+    const { products } = await api("/api/products/mine");
+    state.myAuctions = products;
+  } catch (_) {
+    // non-fatal: the dashboard still renders without the list
+  }
+};
+
+// Dedicated action (not the shared `submit` helper, which expects `{ user }`):
+// the products endpoint returns `{ product }` and must not touch state.user.
+export const listProductForAuction = async () => {
+  state.submitting = true;
+  clearMessages();
+  try {
+    const { product } = await api("/api/products", {
+      method: "POST",
+      body: {
+        title:                state.form.product_title,
+        description:          state.form.product_description,
+        category:             state.form.product_category,
+        starting_price_cents: Math.round(Number(state.form.product_starting_price) * 100),
+        duration_days:        Number(state.form.product_duration)
+      }
+    });
+    state.myAuctions.unshift(product);
+    state.view = "dashboard";
+    state.info = "Your product is live for auction.";
+    emit("ProductListedForAuction", { productId: product.id, sellerId: product.seller_id });
+  } catch (e) {
+    state.error = e.message;
+  } finally {
+    state.submitting = false;
+  }
+};

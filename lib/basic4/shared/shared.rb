@@ -30,4 +30,10 @@ module Basic4
       module Inputs; end
     end
   end
+
+  module ProductAuction
+    module Application
+      module Inputs; end
+    end
+  end
 end
