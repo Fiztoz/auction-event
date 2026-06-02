@@ -5,7 +5,8 @@ A Ruby 4 project with two things in it:
 1. A small **library module** (`Basic4`) with a CSV report generator, a `Ractor`-based parallel greeter, and a `greet` helper.
 2. A **4-step user onboarding web app** built with **Sinatra**, **MongoDB**, and **Vue.js**, themed after Coinbase's visual language.
 
-Requires Ruby `4.0.5` (see `.ruby-version`).
+Requires Ruby `4.0.5` (see `.ruby-version`). Also runs on **JRuby 10.0.5.0**
+(Ruby 3.4 compat) — see [Running on JRuby](#running-on-jruby).
 
 ---
 
@@ -43,8 +44,12 @@ Worked example — income `80_000`, employed, debt `10_000`, 5y history → **65
 
 ## Run with Docker Compose
 
+The `app` image is **JRuby-backed** (`jruby:10.0.5.0-jre`). First boot is
+~5–10 s slower than MRI; steady-state throughput is higher (JVM JIT, true
+threaded Puma).
+
 ```bash
-cp .env.example .env          # edit SESSION_SECRET
+cp .env.example .env          # edit SESSION_SECRET (must be ≥64 chars)
 docker compose up --build
 ```
 
@@ -64,6 +69,23 @@ Requires a running MongoDB on `mongodb://localhost:27017`.
 bundle install
 bundle exec rackup -p 4567    # or: rake server
 ```
+
+### Running on JRuby
+
+The Sinatra app runs under JRuby 10.0.5.0 (Ruby 3.4 compat) on the JVM. MRI
+remains the default; JRuby is opt-in via `RBENV_VERSION`. JRuby 10.1.x is
+**not** supported — `bson-5.2.0-java` crashes on its newer
+`RubyFixnum` internals.
+
+```bash
+rbenv install jruby-10.0.5.0          # one-off
+RBENV_VERSION=jruby-10.0.5.0 bundle install
+RBENV_VERSION=jruby-10.0.5.0 bundle exec rake test
+RBENV_VERSION=jruby-10.0.5.0 bundle exec rackup -p 4567
+```
+
+The two `Basic4.parallel_greet` tests skip under JRuby because `Ractor`
+isn't implemented — `parallel_greet` is library code, not used by the API.
 
 ---
 

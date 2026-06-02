@@ -1,4 +1,4 @@
-FROM ruby:4.0.5-slim
+FROM jruby:10.0.5.0-jre
 
 ENV BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_JOBS=4 \
@@ -7,7 +7,7 @@ ENV BUNDLE_PATH=/usr/local/bundle \
     PORT=4567
 
 RUN apt-get update -qq \
- && apt-get install -y --no-install-recommends build-essential git \
+ && apt-get install -y --no-install-recommends build-essential \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

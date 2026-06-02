@@ -16,11 +16,13 @@ class TestBasic4 < Minitest::Test
   end
 
   def test_parallel_greet
+    skip "Ractor not supported on this runtime" unless defined?(Ractor)
     assert_equal ["Hello, Ada!", "Hello, Grace!", "Hello, Linus!"],
                  Basic4.parallel_greet(%w[Ada Grace Linus])
   end
 
   def test_parallel_greet_empty
+    skip "Ractor not supported on this runtime" unless defined?(Ractor)
     assert_equal [], Basic4.parallel_greet([])
   end
 

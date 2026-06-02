@@ -13,22 +13,22 @@ services:
       retries: 5
       start_period: 10s
 
-  # app:
-  #   build: .
-  #   restart: unless-stopped
-  #   depends_on:
-  #     mongo:
-  #       condition: service_healthy
-  #   environment:
-  #     MONGO_URL: mongodb://mongo:27017
-  #     MONGO_DB: basic4_onboarding
-  #     SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
-  #     RACK_ENV: production
-  #     PORT: 4567
-  #   ports:
-  #     - "${PORT:-4567}:4567"
-  #   volumes:
-  #     - bundle_cache:/usr/local/bundle
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DB: basic4_onboarding
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production-this-is-only-a-development-placeholder-secret}
+      RACK_ENV: production
+      PORT: 4567
+    ports:
+      - "${PORT:-4567}:4567"
+    volumes:
+      - bundle_cache:/usr/local/bundle
 
 volumes:
   mongo_data:
