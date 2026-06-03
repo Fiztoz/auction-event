@@ -4,6 +4,7 @@ const emptyForm = () => ({
   email: "", password: "", name: "",
   token: "",
   income: "", employment: "", debt: "", history_years: "",
+  ship_line1: "", ship_line2: "", ship_city: "", ship_region: "", ship_postal_code: "", ship_country: "US",
   edit_name: "", edit_email: "", edit_current_password: "", edit_new_password: "",
   forgot_email: "",
   reset_token: "", reset_new_password: "",

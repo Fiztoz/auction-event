@@ -7,14 +7,8 @@ export const CreditScoringScreen = {
   },
   template: `
     <div class="card">
-      <h1>Credit profile</h1>
-      <p class="subtitle">Step 3 of 4 — A few details so we can score your application.</p>
-      <div class="steps">
-        <div class="dot active"></div>
-        <div class="dot active"></div>
-        <div class="dot active"></div>
-        <div class="dot"></div>
-      </div>
+      <h1>Become a seller</h1>
+      <p class="subtitle">A few details so we can score your seller application.</p>
       <form @submit.prevent="submitCreditScore">
         <label>Annual income (USD)</label>
         <input type="number" min="0" step="1" v-model="state.form.income" required>

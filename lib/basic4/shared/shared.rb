@@ -36,4 +36,10 @@ module Basic4
       module Inputs; end
     end
   end
+
+  module BuyerOnboarding
+    module Application
+      module Inputs; end
+    end
+  end
 end

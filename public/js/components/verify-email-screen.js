@@ -8,11 +8,10 @@ export const VerifyEmailScreen = {
   template: `
     <div class="card">
       <h1>Verify your email</h1>
-      <p class="subtitle">Step 2 of 4 — We sent a 6-digit code to {{ state.user.email }}. Check the server logs for the code.</p>
+      <p class="subtitle">Step 2 of 3 — We sent a 6-digit code to {{ state.user.email }}. Check the server logs for the code.</p>
       <div class="steps">
         <div class="dot active"></div>
         <div class="dot active"></div>
-        <div class="dot"></div>
         <div class="dot"></div>
       </div>
       <form @submit.prevent="verifyEmail">

@@ -25,6 +25,10 @@ require_relative "lib/basic4/verify_token/application/resend_email_token"
 
 require_relative "lib/basic4/credit_scoring/application/inputs"
 require_relative "lib/basic4/credit_scoring/application/compute_credit_score"
+require_relative "lib/basic4/credit_scoring/application/start_seller_application"
+
+require_relative "lib/basic4/buyer_onboarding/application/inputs"
+require_relative "lib/basic4/buyer_onboarding/application/save_shipping_address"
 
 require_relative "lib/basic4/identity/application/inputs"
 require_relative "lib/basic4/identity/application/authenticate_user"
@@ -90,7 +94,7 @@ module Basic4
 
       def require_seller!
         require_user!
-        halt 403, json(error: "complete onboarding first") unless current_user&.step == "done"
+        halt 403, json(error: "become a seller first") unless current_user&.role == "seller"
       end
 
       def product_input(body)

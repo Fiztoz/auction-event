@@ -72,6 +72,29 @@ module Basic4
       respond_with(result) { |user| json user: Present.call(user) }
     end
 
+    post "/api/onboarding/shipping-address" do
+      require_user!
+      body = json_body
+      result = Basic4::BuyerOnboarding::Application::SaveShippingAddress.call(
+        session[:user_id],
+        Basic4::BuyerOnboarding::Application::Inputs::ShippingAddress.new(
+          line1:       body["line1"],
+          line2:       body["line2"],
+          city:        body["city"],
+          region:      body["region"],
+          postal_code: body["postal_code"],
+          country:     body["country"]
+        )
+      )
+      respond_with(result) { |user| json user: Present.call(user) }
+    end
+
+    post "/api/onboarding/become-seller" do
+      require_user!
+      result = Basic4::CreditScoring::Application::StartSellerApplication.call(session[:user_id])
+      respond_with(result) { |user| json user: Present.call(user) }
+    end
+
     post "/api/onboarding/credit-score" do
       require_user!
       body = json_body

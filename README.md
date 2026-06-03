@@ -12,18 +12,21 @@ Requires Ruby `4.0.5` (see `.ruby-version`). Also runs on **JRuby 10.0.5.0**
 
 ## Onboarding flow
 
+Every new account is a **buyer**. Selling is an opt-in **upgrade**.
+
 ```
-  ┌─────────┐    ┌──────────────┐    ┌───────────────┐    ┌──────┐
-  │ Signup  │ →  │ Verify email │ →  │ Credit score  │ →  │ Done │
-  └─────────┘    └──────────────┘    └───────────────┘    └──────┘
+  Buyer:   Signup → Verify email → Shipping address → Done (role=buyer)
+  Upgrade: Done buyer → "Become a seller" → Credit score → Done (role=seller)
 ```
 
-1. **Signup** — email format + uniqueness validated, bcrypt-hashed password.
+1. **Signup** — email format + uniqueness validated, bcrypt-hashed password. New users start as `role: "buyer"`.
 2. **Verify email** — a 6-digit token is generated, stored on the user doc with a 15-minute TTL, and **logged to stdout** (no SMTP). The user submits the code to advance.
-3. **Credit scoring** — collects annual income, employment status, existing debt, and years of credit history, then computes a deterministic score in `300..850`.
-4. **Done** — welcome screen displaying the computed score.
+3. **Shipping address** — US-style address (line1, optional line2, city, region, postal code, country) for where orders ship. Completing it lands the buyer at `done`.
+4. **Done (buyer)** — dashboard with the public catalog (`/browse`) and a **Become a seller** option.
 
-State lives on the user document (`step` field). Each step is guarded server-side so the API can't be skipped or replayed out of order.
+**Become a seller (upgrade):** a done buyer opts in, which re-enters onboarding at the **credit scoring** step (annual income, employment, existing debt, years of credit history → deterministic score in `300..850`). On completion the user's `role` flips to `seller` and the seller dashboard (sell / edit listings) unlocks. Selling endpoints are gated by `require_seller!` (`role == "seller"`).
+
+State lives on the user document (`role` + `step` fields). Each step is guarded server-side so the API can't be skipped or replayed out of order.
 
 ### Credit-score formula
 
@@ -91,18 +94,26 @@ isn't implemented — `parallel_greet` is library code, not used by the API.
 
 ## HTTP API
 
-| Method | Path                              | Auth      | Body                                            |
-|--------|-----------------------------------|-----------|-------------------------------------------------|
-| POST   | `/api/check-existing`             | none      | `{ email }` → `{ exists: Boolean }`             |
-| POST   | `/api/signup`                     | none      | `{ email, password, name }`                     |
-| POST   | `/api/onboarding/verify-email`    | session   | `{ token }`                                     |
-| POST   | `/api/onboarding/resend-token`    | session   | —                                               |
-| POST   | `/api/onboarding/credit-score`    | session   | `{ income, employment, debt, history_years }`   |
-| GET    | `/api/me`                         | session   | —                                               |
-| POST   | `/api/signout`                    | session   | —                                               |
-| GET    | `/api/health`                     | none      | —                                               |
+| Method | Path                               | Auth    | Body                                            |
+|--------|------------------------------------|---------|-------------------------------------------------|
+| POST   | `/api/check-existing`              | none    | `{ email }` → `{ exists: Boolean }`             |
+| POST   | `/api/signup`                      | none    | `{ email, password, name }`                     |
+| POST   | `/api/onboarding/verify-email`     | session | `{ token }`                                     |
+| POST   | `/api/onboarding/resend-token`     | session | —                                               |
+| POST   | `/api/onboarding/shipping-address` | session | `{ line1, line2?, city, region, postal_code, country }` |
+| POST   | `/api/onboarding/become-seller`    | session | — (done buyer → credit-scoring step)            |
+| POST   | `/api/onboarding/credit-score`     | session | `{ income, employment, debt, history_years }` → flips role to `seller` |
+| GET    | `/browse`                          | none    | public storefront page (HTML)                   |
+| GET    | `/api/products`                    | none    | — → all listings, newest-first                  |
+| POST   | `/api/products`                    | seller  | `{ title, description, category, starting_price_cents, duration_days, images[] }` |
+| PUT    | `/api/products/:id`                | seller  | same as POST (owner only)                       |
+| POST   | `/api/products/images`             | seller  | multipart `file` → `{ url }` (MinIO)            |
+| GET    | `/api/products/mine`               | seller  | — → caller's own listings                       |
+| GET    | `/api/me`                          | session | —                                               |
+| POST   | `/api/signout`                     | session | —                                               |
+| GET    | `/api/health`                      | none    | —                                               |
 
-All responses are JSON. Validation failures return `422` with `{ error, field }`. The session cookie is set on successful signup; the client uses it for the rest of the flow.
+All responses are JSON (except `/browse`). Validation failures return `422` with `{ error, field }`. The session cookie is set on successful signup. **Auth column:** `session` = signed in (`401` otherwise); `seller` = signed in **and** `role == "seller"` (`403` otherwise, via `require_seller!`).
 
 ---
 

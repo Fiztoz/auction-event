@@ -1,4 +1,4 @@
-export const STEPS = ["signup", "verify_email", "credit_scoring", "done"];
+export const STEPS = ["signup", "verify_email", "shipping_address", "done"];
 
 export const api = async (path, opts = {}) => {
   const res = await fetch(path, {

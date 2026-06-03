@@ -35,12 +35,27 @@ module Basic4::Infrastructure::MongoUserRepository
       email:               doc["email"],
       name:                doc["name"],
       password_hash:       doc["password_hash"],
+      # Pre-role docs: anyone who completed credit scoring was a seller.
+      role:                doc["role"] || (doc["credit_score"] ? "seller" : "buyer"),
       step:                doc["step"],
       email_verification:  hydrate_ev(doc["email_verification"]),
       credit_score:        hydrate_cs(doc["credit_score"]),
+      shipping_address:    hydrate_sa(doc["shipping_address"]),
       password_reset:      hydrate_pr(doc["password_reset"]),
       created_at:          doc["created_at"],
       updated_at:          doc["updated_at"]
+    )
+  end
+
+  def self.hydrate_sa(h)
+    return nil unless h
+    Basic4::ShippingAddress.new(
+      line1:       h["line1"],
+      line2:       h["line2"],
+      city:        h["city"],
+      region:      h["region"],
+      postal_code: h["postal_code"],
+      country:     h["country"]
     )
   end
 
@@ -73,12 +88,22 @@ module Basic4::Infrastructure::MongoUserRepository
       "email"              => user.email,
       "name"               => user.name,
       "password_hash"      => user.password_hash,
+      "role"               => user.role,
       "step"               => user.step,
       "email_verification" => serialize_ev(user.email_verification),
       "credit_score"       => serialize_cs(user.credit_score),
+      "shipping_address"   => serialize_sa(user.shipping_address),
       "password_reset"     => serialize_pr(user.password_reset),
       "created_at"         => user.created_at,
       "updated_at"         => user.updated_at
+    }
+  end
+
+  def self.serialize_sa(sa)
+    return nil unless sa
+    {
+      "line1" => sa.line1, "line2" => sa.line2, "city" => sa.city,
+      "region" => sa.region, "postal_code" => sa.postal_code, "country" => sa.country
     }
   end
 

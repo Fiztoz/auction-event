@@ -10,7 +10,7 @@ class TestProductAuction < Minitest::Test
   }.freeze
 
   def test_seller_can_list_a_product_and_see_it
-    complete_onboarding!
+    complete_seller_onboarding!
 
     post_json "/api/products", VALID
     assert_equal 201, last_response.status
@@ -27,21 +27,21 @@ class TestProductAuction < Minitest::Test
   end
 
   def test_rejects_missing_title
-    complete_onboarding!
+    complete_seller_onboarding!
     post_json "/api/products", VALID.merge(title: "")
     assert_equal 422, last_response.status
     assert_equal "title", JSON.parse(last_response.body)["field"]
   end
 
   def test_rejects_unknown_category
-    complete_onboarding!
+    complete_seller_onboarding!
     post_json "/api/products", VALID.merge(category: "weapons")
     assert_equal 422, last_response.status
     assert_equal "category", JSON.parse(last_response.body)["field"]
   end
 
   def test_rejects_out_of_range_duration
-    complete_onboarding!
+    complete_seller_onboarding!
     post_json "/api/products", VALID.merge(duration_days: 31)
     assert_equal 422, last_response.status
     assert_equal "duration_days", JSON.parse(last_response.body)["field"]
@@ -58,10 +58,17 @@ class TestProductAuction < Minitest::Test
     assert_equal 403, last_response.status
   end
 
+  def test_buyer_who_has_not_upgraded_cannot_sell
+    user = complete_onboarding! # finished onboarding but still a buyer
+    assert_equal "buyer", user["role"]
+    post_json "/api/products", VALID
+    assert_equal 403, last_response.status
+  end
+
   # ── images ──────────────────────────────────────────────────────
 
   def test_stores_image_urls
-    complete_onboarding!
+    complete_seller_onboarding!
     urls = ["http://minio/basic4-products/a.jpg", "http://minio/basic4-products/b.jpg"]
     post_json "/api/products", VALID.merge(images: urls)
     assert_equal 201, last_response.status
@@ -69,7 +76,7 @@ class TestProductAuction < Minitest::Test
   end
 
   def test_rejects_more_than_three_images
-    complete_onboarding!
+    complete_seller_onboarding!
     post_json "/api/products", VALID.merge(images: %w[a b c d].map { |n| "http://x/#{n}.jpg" })
     assert_equal 422, last_response.status
     assert_equal "images", JSON.parse(last_response.body)["field"]
@@ -78,7 +85,7 @@ class TestProductAuction < Minitest::Test
   # ── editing ─────────────────────────────────────────────────────
 
   def test_seller_can_edit_their_auction
-    complete_onboarding!
+    complete_seller_onboarding!
     post_json "/api/products", VALID
     id = JSON.parse(last_response.body).dig("product", "id")
 
@@ -90,18 +97,18 @@ class TestProductAuction < Minitest::Test
   end
 
   def test_cannot_edit_another_sellers_auction
-    complete_onboarding!(email: "owner@example.com")
+    complete_seller_onboarding!(email: "owner@example.com")
     post_json "/api/products", VALID
     id = JSON.parse(last_response.body).dig("product", "id")
 
-    complete_onboarding!(email: "intruder@example.com") # session now the other seller
+    complete_seller_onboarding!(email: "intruder@example.com") # session now the other seller
     put_json "/api/products/#{id}", VALID.merge(title: "Hijacked")
     assert_equal 422, last_response.status
     assert_equal "product", JSON.parse(last_response.body)["field"]
   end
 
   def test_edit_requires_a_session
-    complete_onboarding!
+    complete_seller_onboarding!
     post_json "/api/products", VALID
     id = JSON.parse(last_response.body).dig("product", "id")
 
@@ -113,9 +120,9 @@ class TestProductAuction < Minitest::Test
   # ── public catalog ──────────────────────────────────────────────
 
   def test_public_listing_shows_all_sellers_newest_first
-    complete_onboarding!(email: "alice@example.com")
+    complete_seller_onboarding!(email: "alice@example.com")
     post_json "/api/products", VALID.merge(title: "Alice lamp")
-    complete_onboarding!(email: "bob@example.com")
+    complete_seller_onboarding!(email: "bob@example.com")
     post_json "/api/products", VALID.merge(title: "Bob chair")
 
     post "/api/signout" # browse with no session at all

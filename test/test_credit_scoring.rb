@@ -3,22 +3,23 @@ require_relative "test_helper"
 class TestCreditScoring < Minitest::Test
   include TestHelper
 
-  def test_full_onboarding_through_credit_score
-    user = signup!
-    post_json "/api/onboarding/verify-email", token: stored_token(user["id"])
+  def test_seller_upgrade_through_credit_score
+    complete_onboarding! # buyer, done
+    post_json "/api/onboarding/become-seller"
     post_json "/api/onboarding/credit-score",
               income: 80_000, employment: "employed", debt: 10_000, history_years: 5
     assert_equal 200, last_response.status
     body = JSON.parse(last_response.body)
     assert_equal "done", body.dig("user", "step")
+    assert_equal "seller", body.dig("user", "role")
     score = body.dig("user", "credit_score", "score")
     assert_kind_of Integer, score
     assert score.between?(300, 850), "expected score in [300,850], got #{score}"
   end
 
   def test_credit_score_rejects_invalid_employment
-    user = signup!
-    post_json "/api/onboarding/verify-email", token: stored_token(user["id"])
+    complete_onboarding!
+    post_json "/api/onboarding/become-seller"
     post_json "/api/onboarding/credit-score",
               income: 50_000, employment: "ceo", debt: 0, history_years: 1
     assert_equal 422, last_response.status

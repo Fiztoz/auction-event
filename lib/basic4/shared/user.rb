@@ -23,6 +23,8 @@ module Basic4
 
   CreditScoreSnapshot = Data.define(:score, :inputs, :computed_at)
 
+  ShippingAddress = Data.define(:line1, :line2, :city, :region, :postal_code, :country)
+
   PasswordReset = Data.define(:token, :expires_at) do
     def expired?(at:)
       expires_at.nil? || expires_at < at
@@ -35,8 +37,8 @@ module Basic4
   end
 
   User = Data.define(
-    :id, :email, :name, :password_hash, :step,
-    :email_verification, :credit_score, :password_reset,
+    :id, :email, :name, :password_hash, :role, :step,
+    :email_verification, :credit_score, :shipping_address, :password_reset,
     :created_at, :updated_at
   )
 end
@@ -51,11 +53,15 @@ class Basic4::User
   MIN_PASSWORD_LENGTH        = 8
   TOKEN_TTL_SECONDS          = 15 * 60
   PASSWORD_RESET_TTL_SECONDS = 60 * 60
-  ONBOARDING_STEPS           = %w[signup verify_email credit_scoring done].freeze
+  ROLES                      = %w[buyer seller].freeze
+  # Buyer onboarding path. `credit_scoring` is reachable only via the
+  # "become a seller" upgrade from a done buyer, so it's not in this list.
+  ONBOARDING_STEPS           = %w[signup verify_email shipping_address done].freeze
 
   def self.register(id:, email:, name:, password_hash:, verification_token:, at:)
     new(
       id: id, email: email, name: name, password_hash: password_hash,
+      role: "buyer",
       step: "verify_email",
       email_verification: Basic4::EmailVerification.new(
         token: verification_token,
@@ -63,6 +69,7 @@ class Basic4::User
         verified_at: nil
       ),
       credit_score: nil,
+      shipping_address: nil,
       password_reset: nil,
       created_at: at,
       updated_at: at
@@ -76,9 +83,25 @@ class Basic4::User
     end
     Basic4::Result.success(with(
       email_verification: email_verification.complete(at: at),
-      step: "credit_scoring",
+      step: "shipping_address",
       updated_at: at
     ))
+  end
+
+  def save_shipping_address(address:, at:)
+    return Basic4::Result.failure(:step, "not at shipping address step") unless step == "shipping_address"
+    Basic4::Result.success(with(
+      shipping_address: address,
+      step: "done",
+      updated_at: at
+    ))
+  end
+
+  # Begins the seller upgrade: re-enters onboarding at the credit-scoring step.
+  def start_seller_application(at:)
+    return Basic4::Result.failure(:role, "already a seller") if role == "seller"
+    return Basic4::Result.failure(:step, "finish onboarding first") unless step == "done"
+    Basic4::Result.success(with(step: "credit_scoring", updated_at: at))
   end
 
   def reissue_verification_token(token:, at:)
@@ -95,6 +118,7 @@ class Basic4::User
     return Basic4::Result.failure(:step, "not at credit scoring step") unless step == "credit_scoring"
     Basic4::Result.success(with(
       credit_score: Basic4::CreditScoreSnapshot.new(score: score, inputs: inputs, computed_at: at),
+      role: "seller",
       step: "done",
       updated_at: at
     ))

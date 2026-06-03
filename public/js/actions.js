@@ -127,13 +127,30 @@ export const resendToken = async () => {
   }
 };
 
+export const saveShippingAddress = () => submit("/api/onboarding/shipping-address", {
+  line1:       state.form.ship_line1,
+  line2:       state.form.ship_line2,
+  city:        state.form.ship_city,
+  region:      state.form.ship_region,
+  postal_code: state.form.ship_postal_code,
+  country:     state.form.ship_country
+}, {
+  onSuccess: (user) => emit("ShippingAddressSaved", { userId: user.id })
+});
+
+// Seller upgrade: a done buyer opts into selling, which re-enters onboarding at
+// the credit-scoring step (the router then shows the credit form).
+export const becomeSeller = () => submit("/api/onboarding/become-seller", {}, {
+  onSuccess: (user) => emit("SellerApplicationStarted", { userId: user.id })
+});
+
 export const submitCreditScore = () => submit("/api/onboarding/credit-score", {
   income:        Number(state.form.income),
   employment:    state.form.employment,
   debt:          Number(state.form.debt),
   history_years: Number(state.form.history_years)
 }, {
-  onSuccess: (user) => emit("CreditScoreComputed", {
+  onSuccess: (user) => emit("BecameSeller", {
     userId: user.id,
     score:  user.credit_score?.score
   })

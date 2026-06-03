@@ -1,22 +1,25 @@
 import { state } from "../store.js";
-import { openEdit, signout, openSell, openEditAuction, loadMyAuctions } from "../actions.js";
+import { openEdit, signout, openSell, openEditAuction, loadMyAuctions, becomeSeller } from "../actions.js";
 
-const { onMounted } = Vue;
+const { onMounted, computed } = Vue;
 
 export const DashboardScreen = {
   setup() {
-    onMounted(loadMyAuctions);
+    const isSeller = computed(() => state.user.role === "seller");
+    onMounted(() => { if (isSeller.value) loadMyAuctions(); });
     const dollars = (cents) => (cents / 100).toFixed(2);
-    return { state, openEdit, signout, openSell, openEditAuction, dollars };
+    return { state, isSeller, openEdit, signout, openSell, openEditAuction, becomeSeller, dollars };
   },
   template: `
     <div class="card success">
       <div class="check">✓</div>
       <h1>Hi, {{ state.user.name }}</h1>
-      <p class="subtitle">Welcome back to Basic4.</p>
+      <p class="subtitle">{{ isSeller ? 'Your seller dashboard.' : 'Welcome to Basic4.' }}</p>
       <div class="profile-row">
-        <span class="profile-label">Name</span>
-        <span class="profile-value">{{ state.user.name }}</span>
+        <span class="profile-label">Account</span>
+        <span class="profile-value">
+          {{ isSeller ? 'Seller' : 'Buyer' }}
+        </span>
       </div>
       <div class="profile-row">
         <span class="profile-label">Email</span>
@@ -31,11 +34,12 @@ export const DashboardScreen = {
       <div v-if="state.info" class="info">{{ state.info }}</div>
 
       <div class="menu">
-        <button @click="openSell">+ Sell a product at auction</button>
+        <button v-if="isSeller" @click="openSell">+ Sell a product at auction</button>
+        <button v-else @click="becomeSeller" :disabled="state.submitting">Become a seller</button>
         <a class="link-button" href="/browse">Browse all auctions →</a>
       </div>
 
-      <div class="auctions" v-if="state.myAuctions.length">
+      <div class="auctions" v-if="isSeller && state.myAuctions.length">
         <h2>My auctions ({{ state.myAuctions.length }})</h2>
         <div class="auction-item" v-for="a in state.myAuctions" :key="a.id">
           <img class="auction-thumb" v-if="a.images && a.images.length" :src="a.images[0]" alt="">

@@ -31,7 +31,7 @@ class TestVerifyToken < Minitest::Test
     post_json "/api/onboarding/verify-email", token: stored_token(user["id"])
     assert_equal 200, last_response.status
     body = JSON.parse(last_response.body)
-    assert_equal "credit_scoring", body.dig("user", "step")
+    assert_equal "shipping_address", body.dig("user", "step")
     assert body.dig("user", "email_verified")
   end
 

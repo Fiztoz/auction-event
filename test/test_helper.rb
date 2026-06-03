@@ -36,9 +36,24 @@ module TestHelper
     JSON.parse(last_response.body)["user"]
   end
 
+  SHIP = {
+    line1: "1 Market St", city: "San Francisco", region: "CA",
+    postal_code: "94105", country: "US"
+  }.freeze
+
+  # Completes buyer onboarding: signup -> verify -> shipping. Returns a buyer
+  # at step "done", role "buyer".
   def complete_onboarding!(email: "ada@example.com", password: "password1", name: "Ada")
     user = signup!(email: email, password: password, name: name)
     post_json "/api/onboarding/verify-email", token: stored_token(user["id"])
+    post_json "/api/onboarding/shipping-address", SHIP
+    JSON.parse(last_response.body)["user"]
+  end
+
+  # Buyer onboarding + the "become a seller" upgrade. Returns a seller.
+  def complete_seller_onboarding!(email: "ada@example.com", password: "password1", name: "Ada")
+    complete_onboarding!(email: email, password: password, name: name)
+    post_json "/api/onboarding/become-seller"
     post_json "/api/onboarding/credit-score",
               income: 80_000, employment: "employed", debt: 10_000, history_years: 5
     JSON.parse(last_response.body)["user"]

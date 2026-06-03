@@ -6,6 +6,7 @@ import { LoginScreen } from "./components/login-screen.js";
 import { PasswordForgotScreen } from "./components/password-forgot-screen.js";
 import { PasswordResetScreen } from "./components/password-reset-screen.js";
 import { VerifyEmailScreen } from "./components/verify-email-screen.js";
+import { ShippingAddressScreen } from "./components/shipping-address-screen.js";
 import { CreditScoringScreen } from "./components/credit-scoring-screen.js";
 import { EditProfileScreen } from "./components/edit-profile-screen.js";
 import { SellProductScreen } from "./components/sell-product-screen.js";
@@ -16,7 +17,8 @@ const { createApp, computed, onMounted } = Vue;
 const App = {
   components: {
     SignupScreen, LoginScreen, PasswordForgotScreen, PasswordResetScreen,
-    VerifyEmailScreen, CreditScoringScreen, EditProfileScreen, SellProductScreen, DashboardScreen
+    VerifyEmailScreen, ShippingAddressScreen, CreditScoringScreen,
+    EditProfileScreen, SellProductScreen, DashboardScreen
   },
 
   setup() {
@@ -42,6 +44,7 @@ const App = {
     <password-forgot-screen v-else-if="!state.user && state.authMode === 'password_forgot'" />
     <password-reset-screen  v-else-if="!state.user && state.authMode === 'password_reset'" />
     <verify-email-screen    v-else-if="step === 'verify_email'" />
+    <shipping-address-screen v-else-if="step === 'shipping_address'" />
     <credit-scoring-screen  v-else-if="step === 'credit_scoring'" />
     <edit-profile-screen    v-else-if="step === 'done' && state.view === 'edit'" />
     <sell-product-screen    v-else-if="step === 'done' && state.view === 'sell'" />

@@ -8,10 +8,9 @@ export const SignupScreen = {
   template: `
     <div class="card">
       <h1>Create your account</h1>
-      <p class="subtitle">Step 1 of 4 — Basic info</p>
+      <p class="subtitle">Step 1 of 3 — Basic info</p>
       <div class="steps">
         <div class="dot active"></div>
-        <div class="dot"></div>
         <div class="dot"></div>
         <div class="dot"></div>
       </div>
