@@ -93,16 +93,31 @@ module Basic4
       require_seller!
       body = json_body
       result = Basic4::ProductAuction::Application::ListProductForAuction.call(
-        session[:user_id],
-        Basic4::ProductAuction::Application::Inputs::ListProduct.new(
-          title:                body["title"],
-          description:          body["description"],
-          category:             body["category"],
-          starting_price_cents: body["starting_price_cents"],
-          duration_days:        body["duration_days"]
-        )
+        session[:user_id], product_input(body)
       )
       respond_with(result, success_status: 201) { |product| json product: PresentProduct.call(product) }
+    end
+
+    put "/api/products/:id" do
+      require_seller!
+      body = json_body
+      result = Basic4::ProductAuction::Application::UpdateAuction.call(
+        session[:user_id], params["id"], product_input(body)
+      )
+      respond_with(result) { |product| json product: PresentProduct.call(product) }
+    end
+
+    post "/api/products/images" do
+      require_seller!
+      file = params["file"]
+      halt 422, json(error: "no file uploaded", field: "image") unless file.is_a?(Hash) && file[:tempfile]
+      result = Basic4::ProductAuction::Application::UploadImage.call(
+        session[:user_id],
+        io:           file[:tempfile],
+        content_type: file[:type],
+        size:         file[:tempfile].size
+      )
+      respond_with(result, success_status: 201) { |v| json url: v[:url] }
     end
 
     get "/api/products/mine" do

@@ -8,7 +8,7 @@ const emptyForm = () => ({
   forgot_email: "",
   reset_token: "", reset_new_password: "",
   product_title: "", product_description: "", product_category: "",
-  product_starting_price: "", product_duration: ""
+  product_starting_price: "", product_duration: "", product_images: []
 });
 
 export const state = reactive({
@@ -21,6 +21,8 @@ export const state = reactive({
   authMode: "signup",
   view: "dashboard",
   myAuctions: [],
+  editingProductId: null,
+  imageUploading: false,
   form: emptyForm()
 });
 

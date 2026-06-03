@@ -1,5 +1,5 @@
 import { state } from "../store.js";
-import { openEdit, signout, openSell, loadMyAuctions } from "../actions.js";
+import { openEdit, signout, openSell, openEditAuction, loadMyAuctions } from "../actions.js";
 
 const { onMounted } = Vue;
 
@@ -7,7 +7,7 @@ export const DashboardScreen = {
   setup() {
     onMounted(loadMyAuctions);
     const dollars = (cents) => (cents / 100).toFixed(2);
-    return { state, openEdit, signout, openSell, dollars };
+    return { state, openEdit, signout, openSell, openEditAuction, dollars };
   },
   template: `
     <div class="card success">
@@ -37,8 +37,12 @@ export const DashboardScreen = {
       <div class="auctions" v-if="state.myAuctions.length">
         <h2>My auctions ({{ state.myAuctions.length }})</h2>
         <div class="auction-item" v-for="a in state.myAuctions" :key="a.id">
-          <span class="auction-title">{{ a.title }}</span>
-          <span class="auction-meta">\${{ dollars(a.starting_price_cents) }} · {{ a.status }}</span>
+          <img class="auction-thumb" v-if="a.images && a.images.length" :src="a.images[0]" alt="">
+          <div class="auction-text">
+            <span class="auction-title">{{ a.title }}</span>
+            <span class="auction-meta">\${{ dollars(a.starting_price_cents) }} · {{ a.status }}</span>
+          </div>
+          <button type="button" class="link-button auction-edit" @click="openEditAuction(a)">Edit</button>
         </div>
       </div>
 

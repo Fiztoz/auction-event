@@ -27,6 +27,10 @@ module TestHelper
     patch path, payload.to_json, "CONTENT_TYPE" => "application/json"
   end
 
+  def put_json(path, payload = {})
+    put path, payload.to_json, "CONTENT_TYPE" => "application/json"
+  end
+
   def signup!(email: "ada@example.com", password: "password1", name: "Ada")
     post_json "/api/signup", email: email, password: password, name: name
     JSON.parse(last_response.body)["user"]

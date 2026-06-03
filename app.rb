@@ -11,6 +11,7 @@ require_relative "lib/basic4/shared/user_presenter"
 require_relative "lib/basic4/shared/product"
 require_relative "lib/basic4/shared/product_presenter"
 require_relative "lib/basic4/shared/ports/product_repository"
+require_relative "lib/basic4/shared/ports/object_storage"
 require_relative "lib/basic4/shared/container"
 
 require_relative "lib/basic4/check_existing/application/inputs"
@@ -34,6 +35,8 @@ require_relative "lib/basic4/identity/application/reset_password"
 require_relative "lib/basic4/product_auction/application/inputs"
 require_relative "lib/basic4/product_auction/application/list_product_for_auction"
 require_relative "lib/basic4/product_auction/application/list_my_auctions"
+require_relative "lib/basic4/product_auction/application/update_auction"
+require_relative "lib/basic4/product_auction/application/upload_image"
 
 module Basic4
   class OnboardingApp < Sinatra::Base
@@ -51,6 +54,12 @@ module Basic4
         Basic4::DB.ensure_indexes!
       rescue Mongo::Error => e
         warn "[basic4] could not create indexes: #{e.message}"
+      end
+
+      begin
+        Basic4::Container.production[:object_storage].ensure_bucket!
+      rescue => e
+        warn "[basic4] could not reach object storage (MinIO): #{e.message}"
       end
     end
 
@@ -81,6 +90,17 @@ module Basic4
       def require_seller!
         require_user!
         halt 403, json(error: "complete onboarding first") unless current_user&.step == "done"
+      end
+
+      def product_input(body)
+        Basic4::ProductAuction::Application::Inputs::ListProduct.new(
+          title:                body["title"],
+          description:          body["description"],
+          category:             body["category"],
+          starting_price_cents: body["starting_price_cents"],
+          duration_days:        body["duration_days"],
+          images:               body["images"]
+        )
       end
 
       def respond_with(result, success_status: 200, failure_status: 422, &on_success)

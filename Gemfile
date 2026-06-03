@@ -7,6 +7,8 @@ gem "sinatra-contrib"
 gem "puma"
 gem "rackup"
 gem "mongo"
+gem "aws-sdk-s3"
+gem "rexml" # XML parser backend for aws-sdk on JRuby (no built-in like MRI)
 gem "bcrypt"
 gem "json"
 gem "dotenv"

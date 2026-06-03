@@ -13,6 +13,11 @@ module Basic4::Infrastructure::MongoProductRepository
     Basic4::DB.products.find(seller_id: seller_id).sort(created_at: -1).map { |doc| hydrate(doc) }
   end
 
+  def self.find_by_id(id)
+    doc = Basic4::DB.products.find(_id: id).first
+    doc && hydrate(doc)
+  end
+
   def self.hydrate(doc)
     Basic4::Product.new(
       id:                   doc["_id"],
@@ -22,8 +27,10 @@ module Basic4::Infrastructure::MongoProductRepository
       category:             doc["category"],
       starting_price_cents: doc["starting_price_cents"],
       duration_days:        doc["duration_days"],
+      images:               doc["images"] || [],
       status:               doc["status"],
-      created_at:           doc["created_at"]
+      created_at:           doc["created_at"],
+      updated_at:           doc["updated_at"] || doc["created_at"]
     )
   end
 
@@ -36,8 +43,10 @@ module Basic4::Infrastructure::MongoProductRepository
       "category"             => product.category,
       "starting_price_cents" => product.starting_price_cents,
       "duration_days"        => product.duration_days,
+      "images"               => product.images,
       "status"               => product.status,
-      "created_at"           => product.created_at
+      "created_at"           => product.created_at,
+      "updated_at"           => product.updated_at
     }
   end
 end

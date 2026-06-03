@@ -11,8 +11,10 @@ module Basic4::ProductPresenter
       category:             product.category,
       starting_price_cents: product.starting_price_cents,
       duration_days:        product.duration_days,
+      images:               product.images,
       status:               product.status,
-      created_at:           product.created_at
+      created_at:           product.created_at,
+      updated_at:           product.updated_at
     }
   end
 end

@@ -13,3 +13,18 @@ export const api = async (path, opts = {}) => {
   }
   return data;
 };
+
+// Multipart upload — let the browser set the Content-Type boundary, so we do
+// NOT spread the JSON headers from `api`. Same error shape as `api`.
+export const apiUpload = async (path, formData) => {
+  const res = await fetch(path, {
+    method: "POST",
+    credentials: "same-origin",
+    body: formData
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw Object.assign(new Error(data.error || "upload failed"), { field: data.field });
+  }
+  return data;
+};

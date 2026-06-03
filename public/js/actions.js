@@ -1,4 +1,4 @@
-import { api } from "./api.js";
+import { api, apiUpload } from "./api.js";
 import { state, clearMessages, resetAuthForm } from "./store.js";
 import { emit } from "./events.js";
 
@@ -182,18 +182,37 @@ export const saveProfile = () => {
 
 // ── selling ─────────────────────────────────────────────────────────
 
-export const openSell = () => {
-  state.view = "sell";
-  clearMessages();
+const resetProductForm = () => {
   state.form.product_title = "";
   state.form.product_description = "";
   state.form.product_category = "";
   state.form.product_starting_price = "";
   state.form.product_duration = "";
+  state.form.product_images = [];
+};
+
+export const openSell = () => {
+  state.view = "sell";
+  state.editingProductId = null;
+  clearMessages();
+  resetProductForm();
+};
+
+export const openEditAuction = (product) => {
+  state.view = "sell";
+  state.editingProductId = product.id;
+  clearMessages();
+  state.form.product_title = product.title;
+  state.form.product_description = product.description;
+  state.form.product_category = product.category;
+  state.form.product_starting_price = (product.starting_price_cents / 100).toFixed(2);
+  state.form.product_duration = String(product.duration_days);
+  state.form.product_images = [...(product.images || [])];
 };
 
 export const cancelSell = () => {
   state.view = "dashboard";
+  state.editingProductId = null;
   clearMessages();
 };
 
@@ -206,26 +225,57 @@ export const loadMyAuctions = async () => {
   }
 };
 
+export const uploadProductImage = async (file) => {
+  if (!file || state.form.product_images.length >= 3) return;
+  state.imageUploading = true;
+  clearMessages();
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const { url } = await apiUpload("/api/products/images", fd);
+    state.form.product_images.push(url);
+  } catch (e) {
+    state.error = e.message;
+  } finally {
+    state.imageUploading = false;
+  }
+};
+
+export const removeProductImage = (index) => {
+  state.form.product_images.splice(index, 1);
+};
+
 // Dedicated action (not the shared `submit` helper, which expects `{ user }`):
-// the products endpoint returns `{ product }` and must not touch state.user.
+// the products endpoints return `{ product }` and must not touch state.user.
+// Handles both create (POST) and edit (PUT) based on state.editingProductId.
 export const listProductForAuction = async () => {
   state.submitting = true;
   clearMessages();
+  const editingId = state.editingProductId;
+  const payload = {
+    title:                state.form.product_title,
+    description:          state.form.product_description,
+    category:             state.form.product_category,
+    starting_price_cents: Math.round(Number(state.form.product_starting_price) * 100),
+    duration_days:        Number(state.form.product_duration),
+    images:               state.form.product_images
+  };
   try {
-    const { product } = await api("/api/products", {
-      method: "POST",
-      body: {
-        title:                state.form.product_title,
-        description:          state.form.product_description,
-        category:             state.form.product_category,
-        starting_price_cents: Math.round(Number(state.form.product_starting_price) * 100),
-        duration_days:        Number(state.form.product_duration)
-      }
-    });
-    state.myAuctions.unshift(product);
+    const { product } = editingId
+      ? await api(`/api/products/${editingId}`, { method: "PUT", body: payload })
+      : await api("/api/products", { method: "POST", body: payload });
+    if (editingId) {
+      const i = state.myAuctions.findIndex((a) => a.id === editingId);
+      if (i !== -1) state.myAuctions.splice(i, 1, product);
+      state.info = "Auction updated.";
+      emit("AuctionUpdated", { productId: product.id });
+    } else {
+      state.myAuctions.unshift(product);
+      state.info = "Your product is live for auction.";
+      emit("ProductListedForAuction", { productId: product.id, sellerId: product.seller_id });
+    }
     state.view = "dashboard";
-    state.info = "Your product is live for auction.";
-    emit("ProductListedForAuction", { productId: product.id, sellerId: product.seller_id });
+    state.editingProductId = null;
   } catch (e) {
     state.error = e.message;
   } finally {
