@@ -6,8 +6,10 @@ ENV BUNDLE_PATH=/usr/local/bundle \
     RACK_ENV=production \
     PORT=4567
 
+# netbase provides /etc/protocols + /etc/services. Without it, JRuby's Mongo
+# driver monitor thread fails getprotobyname("tcp") -> "getprotobyname_r failed".
 RUN apt-get update -qq \
- && apt-get install -y --no-install-recommends build-essential \
+ && apt-get install -y --no-install-recommends build-essential netbase \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

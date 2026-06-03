@@ -13,23 +13,51 @@ services:
       retries: 5
       start_period: 10s
 
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+
   app:
     build: .
     restart: unless-stopped
     depends_on:
       mongo:
         condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       MONGO_URL: mongodb://mongo:27017
       MONGO_DB: basic4_onboarding
       SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production-this-is-only-a-development-placeholder-secret}
-      RACK_ENV: production
+      # development so static assets get Cache-Control: no-cache (browser always
+      # revalidates -> live JS/CSS edits show without a manual hard-refresh).
+      RACK_ENV: development
       PORT: 4567
+      MINIO_ENDPOINT: http://minio:9000
+      # Browser-facing URL for stored images (resolves from the host, not the app container).
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-basic4-products}
     ports:
       - "${PORT:-4567}:4567"
     volumes:
+      # Live-mount the source so edits show without rebuilding the image.
+      # JS/CSS update on refresh; Ruby changes need `docker compose restart app`.
+      - .:/app
+      # Keep gems in their own volume so the bind-mount above doesn't hide them.
       - bundle_cache:/usr/local/bundle
 
 volumes:
   mongo_data:
   bundle_cache:
+  minio_data:
