@@ -288,11 +288,28 @@ export const listProductForAuction = async () => {
       emit("AuctionUpdated", { productId: product.id });
     } else {
       state.myAuctions.unshift(product);
-      state.info = "Your product is live for auction.";
+      state.info = "Saved as a draft — start it from your dashboard when ready.";
       emit("ProductListedForAuction", { productId: product.id, sellerId: product.seller_id });
     }
     state.view = "dashboard";
     state.editingProductId = null;
+  } catch (e) {
+    state.error = e.message;
+  } finally {
+    state.submitting = false;
+  }
+};
+
+// Seller manually starts a draft auction (draft -> live).
+export const startAuction = async (product) => {
+  state.submitting = true;
+  clearMessages();
+  try {
+    const { product: started } = await api(`/api/products/${product.id}/start`, { method: "POST" });
+    const i = state.myAuctions.findIndex((a) => a.id === started.id);
+    if (i !== -1) state.myAuctions.splice(i, 1, started);
+    state.info = "Auction started.";
+    emit("AuctionStarted", { productId: started.id });
   } catch (e) {
     state.error = e.message;
   } finally {

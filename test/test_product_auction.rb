@@ -16,7 +16,7 @@ class TestProductAuction < Minitest::Test
     assert_equal 201, last_response.status
     product = JSON.parse(last_response.body)["product"]
     refute_nil product["id"]
-    assert_equal "open", product["status"]
+    assert_equal "draft", product["status"]
     assert_equal 4500, product["starting_price_cents"]
 
     get "/api/products/mine"
@@ -115,6 +115,66 @@ class TestProductAuction < Minitest::Test
     post "/api/signout"
     put_json "/api/products/#{id}", VALID.merge(title: "Nope")
     assert_equal 401, last_response.status
+  end
+
+  # ── starting ────────────────────────────────────────────────────
+
+  # Creates a draft auction as the current seller and returns its id.
+  def create_draft!
+    post_json "/api/products", VALID
+    JSON.parse(last_response.body).dig("product", "id")
+  end
+
+  def test_seller_starts_a_draft_auction
+    complete_seller_onboarding!
+    id = create_draft!
+    post_json "/api/products/#{id}/start"
+    assert_equal 200, last_response.status
+    product = JSON.parse(last_response.body)["product"]
+    assert_equal "live", product["status"]
+    refute_nil product["started_at"]
+    refute_nil product["ends_at"]
+  end
+
+  def test_cannot_start_an_already_live_auction
+    complete_seller_onboarding!
+    id = create_draft!
+    post_json "/api/products/#{id}/start"
+    post_json "/api/products/#{id}/start"
+    assert_equal 422, last_response.status
+    assert_equal "status", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_cannot_edit_a_live_auction
+    complete_seller_onboarding!
+    id = create_draft!
+    post_json "/api/products/#{id}/start"
+    put_json "/api/products/#{id}", VALID.merge(title: "Too late")
+    assert_equal 422, last_response.status
+    assert_equal "status", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_cannot_start_another_sellers_auction
+    complete_seller_onboarding!(email: "owner@example.com")
+    id = create_draft!
+    complete_seller_onboarding!(email: "intruder@example.com")
+    post_json "/api/products/#{id}/start"
+    assert_equal 422, last_response.status
+    assert_equal "product", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_start_requires_a_session
+    complete_seller_onboarding!
+    id = create_draft!
+    post "/api/signout"
+    post_json "/api/products/#{id}/start"
+    assert_equal 401, last_response.status
+  end
+
+  def test_buyer_cannot_start_auctions
+    complete_onboarding! # buyer
+    post_json "/api/products/anything/start"
+    assert_equal 403, last_response.status
   end
 
   # ── public catalog ──────────────────────────────────────────────

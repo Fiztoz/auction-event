@@ -70,7 +70,7 @@ export const SellProductScreen = {
         <input type="number" min="1" max="30" step="1" v-model="state.form.product_duration" required>
         <div v-if="state.error" class="error">{{ state.error }}</div>
         <button :disabled="state.submitting">
-          {{ state.submitting ? 'Saving…' : (editing ? 'Save changes' : 'Publish') }}
+          {{ state.submitting ? 'Saving…' : (editing ? 'Save changes' : 'Save draft') }}
         </button>
         <button type="button" class="link-button" @click="back">Back</button>
       </form>

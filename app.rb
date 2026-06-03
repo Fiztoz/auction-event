@@ -41,6 +41,7 @@ require_relative "lib/basic4/product_auction/application/list_product_for_auctio
 require_relative "lib/basic4/product_auction/application/list_my_auctions"
 require_relative "lib/basic4/product_auction/application/browse_products"
 require_relative "lib/basic4/product_auction/application/update_auction"
+require_relative "lib/basic4/product_auction/application/start_auction"
 require_relative "lib/basic4/product_auction/application/upload_image"
 
 module Basic4

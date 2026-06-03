@@ -36,12 +36,15 @@ const App = {
           <img class="product-card-img" v-if="p.images && p.images.length" :src="p.images[0]" :alt="p.title">
           <div class="product-card-img is-empty" v-else>No photo</div>
           <div class="product-card-body">
-            <span class="badge">{{ p.category }}</span>
+            <div class="product-card-tags">
+              <span class="badge">{{ p.category }}</span>
+              <span class="badge" :class="p.status">{{ p.status }}</span>
+            </div>
             <h2 class="product-card-title">{{ p.title }}</h2>
             <p class="product-card-desc">{{ p.description }}</p>
             <div class="product-card-foot">
               <span class="product-price">\${{ dollars(p.starting_price_cents) }}</span>
-              <span class="auction-meta">{{ p.status }} · {{ p.duration_days }}d</span>
+              <span class="auction-meta">{{ p.duration_days }}d</span>
             </div>
           </div>
         </article>

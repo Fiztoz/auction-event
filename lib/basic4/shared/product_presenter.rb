@@ -13,6 +13,8 @@ module Basic4::ProductPresenter
       duration_days:        product.duration_days,
       images:               product.images,
       status:               product.status,
+      started_at:           product.started_at,
+      ends_at:              product.ends_at,
       created_at:           product.created_at,
       updated_at:           product.updated_at
     }

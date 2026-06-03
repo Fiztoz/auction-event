@@ -23,6 +23,11 @@ module Basic4::Infrastructure::MongoProductRepository
   end
 
   def self.hydrate(doc)
+    # Legacy docs were created as "open" (instantly live) before the draft
+    # lifecycle existed — treat them as live and backfill a start time.
+    status = doc["status"] == "open" ? "live" : doc["status"]
+    started_at = doc["started_at"] || (status == "live" ? doc["created_at"] : nil)
+
     Basic4::Product.new(
       id:                   doc["_id"],
       seller_id:            doc["seller_id"],
@@ -32,7 +37,9 @@ module Basic4::Infrastructure::MongoProductRepository
       starting_price_cents: doc["starting_price_cents"],
       duration_days:        doc["duration_days"],
       images:               doc["images"] || [],
-      status:               doc["status"],
+      status:               status,
+      started_at:           started_at,
+      ends_at:              doc["ends_at"],
       created_at:           doc["created_at"],
       updated_at:           doc["updated_at"] || doc["created_at"]
     )
@@ -49,6 +56,8 @@ module Basic4::Infrastructure::MongoProductRepository
       "duration_days"        => product.duration_days,
       "images"               => product.images,
       "status"               => product.status,
+      "started_at"           => product.started_at,
+      "ends_at"              => product.ends_at,
       "created_at"           => product.created_at,
       "updated_at"           => product.updated_at
     }

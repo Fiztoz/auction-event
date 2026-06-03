@@ -5,7 +5,7 @@ module Basic4
   Product = Data.define(
     :id, :seller_id, :title, :description, :category,
     :starting_price_cents, :duration_days, :images, :status,
-    :created_at, :updated_at
+    :started_at, :ends_at, :created_at, :updated_at
   )
 end
 
@@ -14,10 +14,12 @@ end
 # `Data.define do ... end` block leak to the lexical scope, not the class.
 class Basic4::Product
   CATEGORIES      = %w[electronics collectibles fashion home toys other].freeze
+  STATUSES        = %w[draft live].freeze
   DURATION_DAYS   = (1..30)
   MIN_PRICE_CENTS = 1
   MAX_TITLE       = 120
   MAX_IMAGES      = 3
+  SECONDS_PER_DAY = 86_400
 
   # Builds a new auction listing, validating its fields. Returns a
   # Basic4::Result wrapping the Product (Success) or a field error (Failure).
@@ -35,16 +37,31 @@ class Basic4::Product
         starting_price_cents: v[:starting_price_cents],
         duration_days:        v[:duration_days],
         images:               v[:images],
-        status:               "open",
+        status:               "draft",
+        started_at:           nil,
+        ends_at:              nil,
         created_at:           at,
         updated_at:           at
       )
     end
   end
 
+  # Seller manually starts the auction: draft -> live, recording the clock.
+  # ends_at is informational (no automatic close yet).
+  def start(at:)
+    return Basic4::Result.failure(:status, "auction already started") unless status == "draft"
+    Basic4::Result.success(with(
+      status:     "live",
+      started_at: at,
+      ends_at:    at + (duration_days * SECONDS_PER_DAY),
+      updated_at: at
+    ))
+  end
+
   # Applies an edit to an existing listing. Same validation as create; preserves
   # identity (id/seller_id/status/created_at) and bumps updated_at.
   def update_details(title:, description:, category:, starting_price_cents:, duration_days:, images:, at:)
+    return Basic4::Result.failure(:status, "only draft auctions can be edited") unless status == "draft"
     self.class.validate(
       title: title, description: description, category: category,
       starting_price_cents: starting_price_cents, duration_days: duration_days, images: images
