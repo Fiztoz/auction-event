@@ -25,6 +25,9 @@ export const LoginScreen = {
         Don't have an account?
         <a href="#" @click.prevent="switchToSignup">Sign up</a>
       </p>
+      <p class="auth-toggle">
+        <a href="/browse">Browse auctions →</a>
+      </p>
     </div>
   `
 };

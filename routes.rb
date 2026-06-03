@@ -87,6 +87,17 @@ module Basic4
       respond_with(result) { |user| json user: Present.call(user) }
     end
 
+    # ── public catalog ────────────────────────────────────────────
+
+    get "/browse" do
+      erb :browse
+    end
+
+    get "/api/products" do
+      products = Basic4::ProductAuction::Application::BrowseProducts.call
+      json products: products.map { |product| PresentProduct.call(product) }
+    end
+
     # ── selling ───────────────────────────────────────────────────
 
     post "/api/products" do

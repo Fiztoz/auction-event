@@ -109,6 +109,35 @@ class TestProductAuction < Minitest::Test
     put_json "/api/products/#{id}", VALID.merge(title: "Nope")
     assert_equal 401, last_response.status
   end
+
+  # ── public catalog ──────────────────────────────────────────────
+
+  def test_public_listing_shows_all_sellers_newest_first
+    complete_onboarding!(email: "alice@example.com")
+    post_json "/api/products", VALID.merge(title: "Alice lamp")
+    complete_onboarding!(email: "bob@example.com")
+    post_json "/api/products", VALID.merge(title: "Bob chair")
+
+    post "/api/signout" # browse with no session at all
+    get "/api/products"
+    assert_equal 200, last_response.status
+    titles = JSON.parse(last_response.body)["products"].map { |p| p["title"] }
+    assert_includes titles, "Alice lamp"
+    assert_includes titles, "Bob chair"
+    assert_equal "Bob chair", titles.first # newest-first
+  end
+
+  def test_public_listing_needs_no_auth
+    get "/api/products" # never signed in
+    assert_equal 200, last_response.status
+    assert_kind_of Array, JSON.parse(last_response.body)["products"]
+  end
+
+  def test_browse_page_is_served
+    get "/browse"
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "/js/browse.js"
+  end
 end
 
 # Pure unit test for the image-upload use-case — injects a fake object storage

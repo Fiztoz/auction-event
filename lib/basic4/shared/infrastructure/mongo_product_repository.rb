@@ -13,6 +13,10 @@ module Basic4::Infrastructure::MongoProductRepository
     Basic4::DB.products.find(seller_id: seller_id).sort(created_at: -1).map { |doc| hydrate(doc) }
   end
 
+  def self.find_all
+    Basic4::DB.products.find.sort(created_at: -1).map { |doc| hydrate(doc) }
+  end
+
   def self.find_by_id(id)
     doc = Basic4::DB.products.find(_id: id).first
     doc && hydrate(doc)

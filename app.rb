@@ -35,6 +35,7 @@ require_relative "lib/basic4/identity/application/reset_password"
 require_relative "lib/basic4/product_auction/application/inputs"
 require_relative "lib/basic4/product_auction/application/list_product_for_auction"
 require_relative "lib/basic4/product_auction/application/list_my_auctions"
+require_relative "lib/basic4/product_auction/application/browse_products"
 require_relative "lib/basic4/product_auction/application/update_auction"
 require_relative "lib/basic4/product_auction/application/upload_image"
 

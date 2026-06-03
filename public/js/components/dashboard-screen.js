@@ -32,6 +32,7 @@ export const DashboardScreen = {
 
       <div class="menu">
         <button @click="openSell">+ Sell a product at auction</button>
+        <a class="link-button" href="/browse">Browse all auctions →</a>
       </div>
 
       <div class="auctions" v-if="state.myAuctions.length">
