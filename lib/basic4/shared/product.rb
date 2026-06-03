@@ -5,7 +5,9 @@ module Basic4
   Product = Data.define(
     :id, :seller_id, :title, :description, :category,
     :starting_price_cents, :duration_days, :images, :status,
-    :started_at, :ends_at, :created_at, :updated_at
+    :started_at, :ends_at,
+    :current_bid_cents, :bid_count, :highest_bidder_id,
+    :created_at, :updated_at
   )
 end
 
@@ -40,10 +42,38 @@ class Basic4::Product
         status:               "draft",
         started_at:           nil,
         ends_at:              nil,
+        current_bid_cents:    nil,
+        bid_count:            0,
+        highest_bidder_id:    nil,
         created_at:           at,
         updated_at:           at
       )
     end
+  end
+
+  # Places a bid. First bid must be >= starting price; each later bid must
+  # strictly exceed the current highest. Only live auctions before ends_at;
+  # a seller can't bid on their own listing. Returns a Result.
+  def place_bid(bidder_id:, amount_cents:, now:)
+    return Basic4::Result.failure(:status, "auction is not live") unless status == "live"
+    return Basic4::Result.failure(:status, "auction has ended") if ends_at && now > ends_at
+    return Basic4::Result.failure(:bidder, "cannot bid on your own auction") if bidder_id == seller_id
+    return Basic4::Result.failure(:amount_cents, "invalid bid amount") unless amount_cents.is_a?(Integer) && amount_cents.positive?
+
+    if current_bid_cents
+      if amount_cents <= current_bid_cents
+        return Basic4::Result.failure(:amount_cents, "bid must exceed the current bid")
+      end
+    elsif amount_cents < starting_price_cents
+      return Basic4::Result.failure(:amount_cents, "bid must be at least the starting price")
+    end
+
+    Basic4::Result.success(with(
+      current_bid_cents: amount_cents,
+      highest_bidder_id: bidder_id,
+      bid_count:         bid_count + 1,
+      updated_at:        now
+    ))
   end
 
   # Seller manually starts the auction: draft -> live, recording the clock.

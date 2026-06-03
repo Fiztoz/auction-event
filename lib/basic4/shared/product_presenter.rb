@@ -15,6 +15,9 @@ module Basic4::ProductPresenter
       status:               product.status,
       started_at:           product.started_at,
       ends_at:              product.ends_at,
+      current_bid_cents:    product.current_bid_cents,
+      bid_count:            product.bid_count,
+      highest_bidder_id:    product.highest_bidder_id,
       created_at:           product.created_at,
       updated_at:           product.updated_at
     }

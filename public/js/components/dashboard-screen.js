@@ -48,7 +48,10 @@ export const DashboardScreen = {
               {{ a.title }}
               <span class="badge" :class="a.status">{{ a.status }}</span>
             </span>
-            <span class="auction-meta">\${{ dollars(a.starting_price_cents) }} · {{ a.duration_days }}d</span>
+            <span class="auction-meta" v-if="a.status === 'live'">
+              \${{ dollars(a.current_bid_cents || a.starting_price_cents) }} · {{ a.bid_count }} bid{{ a.bid_count === 1 ? '' : 's' }}
+            </span>
+            <span class="auction-meta" v-else>\${{ dollars(a.starting_price_cents) }} · {{ a.duration_days }}d</span>
           </div>
           <template v-if="a.status === 'draft'">
             <button type="button" class="auction-edit" @click="startAuction(a)" :disabled="state.submitting">Start</button>

@@ -121,6 +121,15 @@ module Basic4
       json products: products.map { |product| PresentProduct.call(product) }
     end
 
+    post "/api/products/:id/bid" do
+      require_user!
+      body = json_body
+      result = Basic4::ProductAuction::Application::PlaceBid.call(
+        session[:user_id], params["id"], body["amount_cents"]
+      )
+      respond_with(result) { |product| json product: PresentProduct.call(product) }
+    end
+
     # ── selling ───────────────────────────────────────────────────
 
     post "/api/products" do

@@ -513,6 +513,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   justify-content: space-between;
   align-items: baseline;
 }
+
+/* Bid control on /browse cards */
+.bid { margin-top: 0.625rem; border-top: 1px solid var(--cb-border); padding-top: 0.625rem; }
+.bid-row { display: flex; gap: 0.5rem; }
+.bid-row input { margin: 0; }
+.bid-row button { margin: 0; width: auto; white-space: nowrap; }
+.bid-top { margin: 0 0 0.375rem; font-size: 0.8125rem; font-weight: 600; color: var(--cb-success); }
 .product-price {
   font-weight: 700;
   color: var(--cb-ink);

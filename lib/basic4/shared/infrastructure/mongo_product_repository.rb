@@ -40,6 +40,9 @@ module Basic4::Infrastructure::MongoProductRepository
       status:               status,
       started_at:           started_at,
       ends_at:              doc["ends_at"],
+      current_bid_cents:    doc["current_bid_cents"],
+      bid_count:            doc["bid_count"] || 0,
+      highest_bidder_id:    doc["highest_bidder_id"],
       created_at:           doc["created_at"],
       updated_at:           doc["updated_at"] || doc["created_at"]
     )
@@ -58,6 +61,9 @@ module Basic4::Infrastructure::MongoProductRepository
       "status"               => product.status,
       "started_at"           => product.started_at,
       "ends_at"              => product.ends_at,
+      "current_bid_cents"    => product.current_bid_cents,
+      "bid_count"            => product.bid_count,
+      "highest_bidder_id"    => product.highest_bidder_id,
       "created_at"           => product.created_at,
       "updated_at"           => product.updated_at
     }

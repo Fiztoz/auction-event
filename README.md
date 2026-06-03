@@ -57,6 +57,19 @@ A listing is created as a **draft** and is **started manually by the seller**:
 
 `/browse` lists everything (drafts and live), each tagged with its status.
 
+### Bidding
+
+Any **signed-in** user can bid on a **live** auction from `/browse` (the page prompts
+sign-in if you're logged out). Rules (`POST /api/products/:id/bid` with `{ amount_cents }`):
+
+- the auction must be `live` and not past its `ends_at` (else `422`);
+- you can't bid on **your own** listing (`422`);
+- the **first** bid must be ≥ the starting price; each **later** bid must strictly exceed the
+  current highest (no fixed increment).
+
+The highest bid is denormalized on the product (`current_bid_cents`, `bid_count`,
+`highest_bidder_id`); there's no settlement/checkout step yet.
+
 ---
 
 ## Run with Docker Compose
@@ -122,6 +135,7 @@ isn't implemented — `parallel_greet` is library code, not used by the API.
 | POST   | `/api/products`                    | seller  | `{ title, description, category, starting_price_cents, duration_days, images[] }` |
 | PUT    | `/api/products/:id`                | seller  | same as POST (owner only; draft only)           |
 | POST   | `/api/products/:id/start`          | seller  | — (owner only; draft → live)                    |
+| POST   | `/api/products/:id/bid`            | session | `{ amount_cents }` (not own; live; beats current) |
 | POST   | `/api/products/images`             | seller  | multipart `file` → `{ url }` (MinIO)            |
 | GET    | `/api/products/mine`               | seller  | — → caller's own listings                       |
 | GET    | `/api/me`                          | session | —                                               |
