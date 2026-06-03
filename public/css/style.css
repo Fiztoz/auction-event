@@ -514,6 +514,36 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   align-items: baseline;
 }
 
+/* Auction detail view */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 560px;
+}
+.detail > * { margin: 0; } /* the gap is the single source of vertical rhythm */
+.browse > .link-button { display: inline-block; margin-bottom: 0.75rem; }
+.detail-img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--cb-radius);
+  border: 1px solid var(--cb-border);
+}
+.detail-desc { color: var(--cb-muted); line-height: 1.55; }
+.bid-list { margin-top: 0.5rem; }
+.bid-list-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--cb-border);
+  border-radius: 8px;
+  margin-bottom: 0.375rem;
+}
+.bid-list-row.mine { border-color: var(--cb-blue); background: var(--cb-blue-soft); }
+.bid-list-amount { font-weight: 600; color: var(--cb-ink); }
+.bid-list-bidder { color: var(--cb-muted); }
+
 /* Bid control on /browse cards */
 .bid { margin-top: 0.625rem; border-top: 1px solid var(--cb-border); padding-top: 0.625rem; }
 .bid-row { display: flex; gap: 0.5rem; }

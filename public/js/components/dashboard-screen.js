@@ -1,5 +1,6 @@
 import { state } from "../store.js";
 import { openEdit, signout, openSell, openEditAuction, loadMyAuctions, becomeSeller, startAuction } from "../actions.js";
+import { currency } from "../format.js";
 
 const { onMounted, computed } = Vue;
 
@@ -7,8 +8,7 @@ export const DashboardScreen = {
   setup() {
     const isSeller = computed(() => state.user.role === "seller");
     onMounted(() => { if (isSeller.value) loadMyAuctions(); });
-    const dollars = (cents) => (cents / 100).toFixed(2);
-    return { state, isSeller, openEdit, signout, openSell, openEditAuction, becomeSeller, startAuction, dollars };
+    return { state, isSeller, openEdit, signout, openSell, openEditAuction, becomeSeller, startAuction, currency };
   },
   template: `
     <div class="card success">
@@ -49,9 +49,9 @@ export const DashboardScreen = {
               <span class="badge" :class="a.status">{{ a.status }}</span>
             </span>
             <span class="auction-meta" v-if="a.status === 'live'">
-              \${{ dollars(a.current_bid_cents || a.starting_price_cents) }} · {{ a.bid_count }} bid{{ a.bid_count === 1 ? '' : 's' }}
+              {{ currency(a.current_bid_cents || a.starting_price_cents) }} · {{ a.bid_count }} bid{{ a.bid_count === 1 ? '' : 's' }}
             </span>
-            <span class="auction-meta" v-else>\${{ dollars(a.starting_price_cents) }} · {{ a.duration_days }}d</span>
+            <span class="auction-meta" v-else>{{ currency(a.starting_price_cents) }} · {{ a.duration_days }}d</span>
           </div>
           <template v-if="a.status === 'draft'">
             <button type="button" class="auction-edit" @click="startAuction(a)" :disabled="state.submitting">Start</button>

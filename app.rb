@@ -10,7 +10,10 @@ require_relative "lib/basic4/shared/user"
 require_relative "lib/basic4/shared/user_presenter"
 require_relative "lib/basic4/shared/product"
 require_relative "lib/basic4/shared/product_presenter"
+require_relative "lib/basic4/shared/bid"
+require_relative "lib/basic4/shared/bid_presenter"
 require_relative "lib/basic4/shared/ports/product_repository"
+require_relative "lib/basic4/shared/ports/bid_repository"
 require_relative "lib/basic4/shared/ports/object_storage"
 require_relative "lib/basic4/shared/container"
 
@@ -43,6 +46,7 @@ require_relative "lib/basic4/product_auction/application/browse_products"
 require_relative "lib/basic4/product_auction/application/update_auction"
 require_relative "lib/basic4/product_auction/application/start_auction"
 require_relative "lib/basic4/product_auction/application/place_bid"
+require_relative "lib/basic4/product_auction/application/show_auction"
 require_relative "lib/basic4/product_auction/application/upload_image"
 
 module Basic4
@@ -55,6 +59,7 @@ module Basic4
 
     Present = Basic4::UserPresenter
     PresentProduct = Basic4::ProductPresenter
+    PresentBid = Basic4::BidPresenter
 
     configure :production, :development do
       begin

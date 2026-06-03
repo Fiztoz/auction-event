@@ -68,7 +68,10 @@ sign-in if you're logged out). Rules (`POST /api/products/:id/bid` with `{ amoun
   current highest (no fixed increment).
 
 The highest bid is denormalized on the product (`current_bid_cents`, `bid_count`,
-`highest_bidder_id`); there's no settlement/checkout step yet.
+`highest_bidder_id`); each bid is also recorded in a `bids` collection. Clicking an auction
+on `/browse` opens a **detail view** with the full description, image, and the complete
+**bid history** (newest-first, each bid showing the bidder's name — your own shown as
+"You"); bidding happens there. There's no settlement/checkout step yet.
 
 ---
 
@@ -132,6 +135,7 @@ isn't implemented — `parallel_greet` is library code, not used by the API.
 | POST   | `/api/onboarding/credit-score`     | session | `{ income, employment, debt, history_years }` → flips role to `seller` |
 | GET    | `/browse`                          | none    | public storefront page (HTML)                   |
 | GET    | `/api/products`                    | none    | — → all listings, newest-first                  |
+| GET    | `/api/products/:id`                | none    | — → `{ product, bids[] }` (bids newest-first)   |
 | POST   | `/api/products`                    | seller  | `{ title, description, category, starting_price_cents, duration_days, images[] }` |
 | PUT    | `/api/products/:id`                | seller  | same as POST (owner only; draft only)           |
 | POST   | `/api/products/:id/start`          | seller  | — (owner only; draft → live)                    |

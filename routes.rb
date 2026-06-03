@@ -2,7 +2,12 @@ module Basic4
   class OnboardingApp < Sinatra::Base
     # ── system ────────────────────────────────────────────────────
 
+    # Home is the public storefront. The onboarding / sign-in SPA lives at /app.
     get "/" do
+      erb :browse
+    end
+
+    get "/app" do
       erb :index
     end
 
@@ -175,6 +180,15 @@ module Basic4
       require_seller!
       products = Basic4::ProductAuction::Application::ListMyAuctions.call(session[:user_id])
       json products: products.map { |product| PresentProduct.call(product) }
+    end
+
+    # Public single-auction detail + full bid history. Declared AFTER
+    # "/api/products/mine" so the :id wildcard doesn't swallow that path.
+    get "/api/products/:id" do
+      found = Basic4::ProductAuction::Application::ShowAuction.call(params["id"])
+      halt 404, json(error: "not found") unless found
+      json product: PresentProduct.call(found[:product]),
+           bids:    found[:bids].map { |bid| PresentBid.call(bid, viewer_id: session[:user_id]) }
     end
 
     # ── account management ────────────────────────────────────────

@@ -73,6 +73,50 @@ class TestBidding < Minitest::Test
     post_json "/api/products/#{id}/bid", amount_cents: 9000
     assert_equal 401, last_response.status
   end
+
+  # ── detail + bid history ─────────────────────────────────────────
+
+  def test_detail_lists_bids_newest_first_with_bidder_name
+    id = live_auction!
+    complete_onboarding!(email: "buyer@example.com", name: "Bea")
+    post_json "/api/products/#{id}/bid", amount_cents: 5000
+    post_json "/api/products/#{id}/bid", amount_cents: 6000
+
+    get "/api/products/#{id}"
+    assert_equal 200, last_response.status
+    body = JSON.parse(last_response.body)
+    assert_equal id, body.dig("product", "id")
+    bids = body["bids"]
+    assert_equal 2, bids.length
+    assert_equal 6000, bids.first["amount_cents"] # newest-first
+    assert_equal 5000, bids.last["amount_cents"]
+    # viewer is the bidder -> own bids labelled "You"
+    assert_equal "You", bids.first["bidder"]
+    assert bids.first["mine"]
+  end
+
+  def test_detail_shows_bidder_name_to_others
+    id = live_auction!
+    complete_onboarding!(email: "buyer@example.com", name: "Bea")
+    post_json "/api/products/#{id}/bid", amount_cents: 5000
+
+    post "/api/signout" # anonymous viewer
+    get "/api/products/#{id}"
+    bid = JSON.parse(last_response.body)["bids"].first
+    assert_equal "Bea", bid["bidder"]
+    refute bid["mine"]
+  end
+
+  def test_detail_404_for_unknown_id
+    get "/api/products/does-not-exist"
+    assert_equal 404, last_response.status
+  end
+
+  def test_products_mine_still_routes_to_seller_list
+    # The :id detail route must not swallow /api/products/mine.
+    get "/api/products/mine"
+    assert_equal 401, last_response.status # require_seller!, not a 404 from ShowAuction
+  end
 end
 
 # Pure aggregate rules that are awkward to reach over HTTP (e.g. an expired

@@ -1,6 +1,7 @@
 require_relative "shared"
 require_relative "infrastructure/mongo_user_repository"
 require_relative "infrastructure/mongo_product_repository"
+require_relative "infrastructure/mongo_bid_repository"
 require_relative "infrastructure/bcrypt_password_hasher"
 require_relative "infrastructure/secure_random_token_generator"
 require_relative "infrastructure/stdout_notifier"
@@ -14,6 +15,7 @@ module Basic4::Container
     @production ||= {
       user_repository:    I::MongoUserRepository,
       product_repository: I::MongoProductRepository,
+      bid_repository:     I::MongoBidRepository,
       password_hasher: I::BcryptPasswordHasher,
       tokens:          I::SecureRandomTokenGenerator,
       notifier:        I::StdoutNotifier,

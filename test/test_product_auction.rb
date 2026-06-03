@@ -205,6 +205,18 @@ class TestProductAuction < Minitest::Test
     assert_equal 200, last_response.status
     assert_includes last_response.body, "/js/browse.js"
   end
+
+  def test_home_page_is_the_storefront
+    get "/"
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "/js/browse.js"
+  end
+
+  def test_onboarding_app_served_at_app
+    get "/app"
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "/js/app.js"
+  end
 end
 
 # Pure unit test for the image-upload use-case — injects a fake object storage
