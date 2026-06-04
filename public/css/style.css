@@ -453,6 +453,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* Auction status chips (extend the generic .badge) */
 .badge.live   { color: #fff; background: var(--cb-success); border-color: var(--cb-success); }
 .badge.draft  { color: var(--cb-muted); background: var(--cb-bg-soft); border-color: var(--cb-border); }
+.badge.ended  { color: #fff; background: var(--cb-ink-soft); border-color: var(--cb-ink-soft); }
+.sold { margin: 0; font-weight: 600; color: var(--cb-success); }
 .product-card-tags { display: flex; gap: 0.375rem; }
 
 .product-grid {

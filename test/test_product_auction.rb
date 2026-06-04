@@ -177,6 +177,82 @@ class TestProductAuction < Minitest::Test
     assert_equal 403, last_response.status
   end
 
+  # ── stopping ────────────────────────────────────────────────────
+
+  # Creates a draft, starts it, and returns its id (current session = seller).
+  def live_auction!
+    id = create_draft!
+    post_json "/api/products/#{id}/start"
+    id
+  end
+
+  def test_seller_stops_a_live_auction
+    complete_seller_onboarding!
+    id = live_auction!
+    post_json "/api/products/#{id}/stop"
+    assert_equal 200, last_response.status
+    product = JSON.parse(last_response.body)["product"]
+    assert_equal "ended", product["status"]
+    refute_nil product["ended_at"]
+  end
+
+  def test_stopping_closes_bidding
+    complete_seller_onboarding!(email: "owner@example.com")
+    id = live_auction!
+    complete_onboarding!(email: "buyer@example.com")
+    post_json "/api/products/#{id}/bid", amount_cents: 5000 # works while live
+    assert_equal 200, last_response.status
+
+    post_json "/api/login", email: "owner@example.com", password: "password1" # back to the seller
+    post_json "/api/products/#{id}/stop"
+    assert_equal 200, last_response.status
+
+    post_json "/api/login", email: "buyer@example.com", password: "password1" # back to the buyer
+    post_json "/api/products/#{id}/bid", amount_cents: 9000
+    assert_equal 422, last_response.status
+    assert_equal "status", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_cannot_stop_a_draft
+    complete_seller_onboarding!
+    id = create_draft!
+    post_json "/api/products/#{id}/stop"
+    assert_equal 422, last_response.status
+    assert_equal "status", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_cannot_stop_an_already_ended_auction
+    complete_seller_onboarding!
+    id = live_auction!
+    post_json "/api/products/#{id}/stop"
+    post_json "/api/products/#{id}/stop"
+    assert_equal 422, last_response.status
+    assert_equal "status", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_cannot_stop_another_sellers_auction
+    complete_seller_onboarding!(email: "owner@example.com")
+    id = live_auction!
+    complete_seller_onboarding!(email: "intruder@example.com")
+    post_json "/api/products/#{id}/stop"
+    assert_equal 422, last_response.status
+    assert_equal "product", JSON.parse(last_response.body)["field"]
+  end
+
+  def test_stop_requires_a_session
+    complete_seller_onboarding!
+    id = live_auction!
+    post "/api/signout"
+    post_json "/api/products/#{id}/stop"
+    assert_equal 401, last_response.status
+  end
+
+  def test_buyer_cannot_stop_auctions
+    complete_onboarding! # buyer
+    post_json "/api/products/anything/stop"
+    assert_equal 403, last_response.status
+  end
+
   # ── public catalog ──────────────────────────────────────────────
 
   def test_public_listing_shows_all_sellers_newest_first

@@ -1,5 +1,5 @@
 import { state } from "../store.js";
-import { openEdit, signout, openSell, openEditAuction, loadMyAuctions, becomeSeller, startAuction } from "../actions.js";
+import { openEdit, signout, openSell, openEditAuction, loadMyAuctions, becomeSeller, startAuction, stopAuction } from "../actions.js";
 import { currency } from "../format.js";
 
 const { onMounted, computed } = Vue;
@@ -8,7 +8,7 @@ export const DashboardScreen = {
   setup() {
     const isSeller = computed(() => state.user.role === "seller");
     onMounted(() => { if (isSeller.value) loadMyAuctions(); });
-    return { state, isSeller, openEdit, signout, openSell, openEditAuction, becomeSeller, startAuction, currency };
+    return { state, isSeller, openEdit, signout, openSell, openEditAuction, becomeSeller, startAuction, stopAuction, currency };
   },
   template: `
     <div class="card success">
@@ -51,12 +51,16 @@ export const DashboardScreen = {
             <span class="auction-meta" v-if="a.status === 'live'">
               {{ currency(a.current_bid_cents || a.starting_price_cents) }} · {{ a.bid_count }} bid{{ a.bid_count === 1 ? '' : 's' }}
             </span>
+            <span class="auction-meta" v-else-if="a.status === 'ended'">
+              {{ a.current_bid_cents ? 'Sold for ' + currency(a.current_bid_cents) + ' · ' + a.bid_count + ' bid' + (a.bid_count === 1 ? '' : 's') : 'Ended — no bids' }}
+            </span>
             <span class="auction-meta" v-else>{{ currency(a.starting_price_cents) }} · {{ a.duration_days }}d</span>
           </div>
           <template v-if="a.status === 'draft'">
             <button type="button" class="auction-edit" @click="startAuction(a)" :disabled="state.submitting">Start</button>
             <button type="button" class="link-button auction-edit" @click="openEditAuction(a)">Edit</button>
           </template>
+          <button type="button" v-else-if="a.status === 'live'" class="link-button auction-edit" @click="stopAuction(a)" :disabled="state.submitting">Stop</button>
         </div>
       </div>
 

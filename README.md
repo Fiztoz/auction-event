@@ -45,17 +45,19 @@ Worked example — income `80_000`, employed, debt `10_000`, 5y history → **65
 
 ### Auction lifecycle
 
-A listing is created as a **draft** and is **started manually by the seller**:
+A listing is created as a **draft**, **started** manually by the seller, and later
+**stopped** manually by the seller:
 
 ```
-  create → draft → (seller clicks Start) → live
+  create → draft → (seller Start) → live → (seller Stop) → ended
 ```
 
 - **draft** — editable; visible to the seller in "My auctions" and tagged `draft` on `/browse`.
-- **Start** (`POST /api/products/:id/start`) flips it to **live** and records `started_at` and `ends_at` (= `started_at` + `duration_days`). There is no automatic close yet — `ends_at` is informational.
+- **Start** (`POST /api/products/:id/start`) flips it to **live** and records `started_at` and `ends_at` (= `started_at` + `duration_days`). `ends_at` is informational — there is no automatic close.
 - Once **live**, the listing is **locked**: `PUT /api/products/:id` returns `422` (drafts only). Starting an already-live auction also returns `422`.
+- **Stop** (`POST /api/products/:id/stop`) flips **live → ended**, records `ended_at`, and closes bidding (further bids return `422`). The outcome is shown from the highest bid — "Sold for $X to &lt;bidder&gt;", or "Ended — no bids".
 
-`/browse` lists everything (drafts and live), each tagged with its status.
+`/browse` lists everything (draft / live / ended), each tagged with its status.
 
 ### Bidding
 
@@ -139,6 +141,7 @@ isn't implemented — `parallel_greet` is library code, not used by the API.
 | POST   | `/api/products`                    | seller  | `{ title, description, category, starting_price_cents, duration_days, images[] }` |
 | PUT    | `/api/products/:id`                | seller  | same as POST (owner only; draft only)           |
 | POST   | `/api/products/:id/start`          | seller  | — (owner only; draft → live)                    |
+| POST   | `/api/products/:id/stop`           | seller  | — (owner only; live → ended)                    |
 | POST   | `/api/products/:id/bid`            | session | `{ amount_cents }` (not own; live; beats current) |
 | POST   | `/api/products/images`             | seller  | multipart `file` → `{ url }` (MinIO)            |
 | GET    | `/api/products/mine`               | seller  | — → caller's own listings                       |

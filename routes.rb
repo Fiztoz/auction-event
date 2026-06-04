@@ -163,6 +163,14 @@ module Basic4
       respond_with(result) { |product| json product: PresentProduct.call(product) }
     end
 
+    post "/api/products/:id/stop" do
+      require_seller!
+      result = Basic4::ProductAuction::Application::StopAuction.call(
+        session[:user_id], params["id"]
+      )
+      respond_with(result) { |product| json product: PresentProduct.call(product) }
+    end
+
     post "/api/products/images" do
       require_seller!
       file = params["file"]

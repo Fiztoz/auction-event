@@ -5,7 +5,7 @@ module Basic4
   Product = Data.define(
     :id, :seller_id, :title, :description, :category,
     :starting_price_cents, :duration_days, :images, :status,
-    :started_at, :ends_at,
+    :started_at, :ends_at, :ended_at,
     :current_bid_cents, :bid_count, :highest_bidder_id,
     :created_at, :updated_at
   )
@@ -16,7 +16,7 @@ end
 # `Data.define do ... end` block leak to the lexical scope, not the class.
 class Basic4::Product
   CATEGORIES      = %w[electronics collectibles fashion home toys other].freeze
-  STATUSES        = %w[draft live].freeze
+  STATUSES        = %w[draft live ended].freeze
   DURATION_DAYS   = (1..30)
   MIN_PRICE_CENTS = 1
   MAX_TITLE       = 120
@@ -42,6 +42,7 @@ class Basic4::Product
         status:               "draft",
         started_at:           nil,
         ends_at:              nil,
+        ended_at:             nil,
         current_bid_cents:    nil,
         bid_count:            0,
         highest_bidder_id:    nil,
@@ -86,6 +87,13 @@ class Basic4::Product
       ends_at:    at + (duration_days * SECONDS_PER_DAY),
       updated_at: at
     ))
+  end
+
+  # Seller manually ends the auction: live -> ended. The outcome (winner / sold
+  # price) is derived from the existing highest bid; no settlement here.
+  def stop(at:)
+    return Basic4::Result.failure(:status, "only live auctions can be stopped") unless status == "live"
+    Basic4::Result.success(with(status: "ended", ended_at: at, updated_at: at))
   end
 
   # Applies an edit to an existing listing. Same validation as create; preserves

@@ -316,3 +316,20 @@ export const startAuction = async (product) => {
     state.submitting = false;
   }
 };
+
+// Seller manually stops a live auction (live -> ended).
+export const stopAuction = async (product) => {
+  state.submitting = true;
+  clearMessages();
+  try {
+    const { product: stopped } = await api(`/api/products/${product.id}/stop`, { method: "POST" });
+    const i = state.myAuctions.findIndex((a) => a.id === stopped.id);
+    if (i !== -1) state.myAuctions.splice(i, 1, stopped);
+    state.info = "Auction stopped.";
+    emit("AuctionStopped", { productId: stopped.id });
+  } catch (e) {
+    state.error = e.message;
+  } finally {
+    state.submitting = false;
+  }
+};
