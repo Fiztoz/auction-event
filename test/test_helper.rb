@@ -61,6 +61,28 @@ module TestHelper
     JSON.parse(last_response.body)["user"]
   end
 
+  # Seeds a back-office admin straight through the container (admins are never
+  # created via signup), the same way bin/create_admin does.
+  def create_admin!(email: "admin@example.com", password: "password1", name: "Admin")
+    c = Basic4::Container.production
+    user = Basic4::User.create_admin(
+      id:            c[:tokens].user_id,
+      email:         email,
+      name:          name,
+      password_hash: c[:password_hasher].hash(password),
+      at:            c[:clock].now
+    )
+    c[:user_repository].store(user)
+    user
+  end
+
+  # Seeds an admin and signs in as them. Returns the presented user.
+  def sign_in_admin!(email: "admin@example.com", password: "password1")
+    create_admin!(email: email, password: password)
+    post_json "/api/login", email: email, password: password
+    JSON.parse(last_response.body)["user"]
+  end
+
   def stored_token(user_id)
     Basic4::DB.users.find(_id: user_id).first["email_verification"]["token"]
   end

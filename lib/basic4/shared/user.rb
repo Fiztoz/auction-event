@@ -53,7 +53,9 @@ class Basic4::User
   MIN_PASSWORD_LENGTH        = 8
   TOKEN_TTL_SECONDS          = 15 * 60
   PASSWORD_RESET_TTL_SECONDS = 60 * 60
-  ROLES                      = %w[buyer seller].freeze
+  # buyer/seller are reachable through onboarding; admin is a back-office role
+  # created out-of-band (see bin/create_admin), never via signup.
+  ROLES                      = %w[buyer seller admin].freeze
   # Buyer onboarding path. `credit_scoring` is reachable only via the
   # "become a seller" upgrade from a done buyer, so it's not in this list.
   ONBOARDING_STEPS           = %w[signup verify_email shipping_address done].freeze
@@ -74,6 +76,29 @@ class Basic4::User
       created_at: at,
       updated_at: at
     )
+  end
+
+  # Builds a back-office admin. Admins are created out-of-band (the
+  # bin/create_admin seed script), not through signup — they skip onboarding
+  # (step "done") and carry a pre-verified email so they can sign in at once.
+  def self.create_admin(id:, email:, name:, password_hash:, at:)
+    new(
+      id: id, email: email, name: name, password_hash: password_hash,
+      role: "admin",
+      step: "done",
+      email_verification: Basic4::EmailVerification.new(
+        token: nil, expires_at: nil, verified_at: at
+      ),
+      credit_score: nil,
+      shipping_address: nil,
+      password_reset: nil,
+      created_at: at,
+      updated_at: at
+    )
+  end
+
+  def admin?
+    role == "admin"
   end
 
   def verify_email(submitted_token:, at:)

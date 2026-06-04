@@ -17,6 +17,12 @@ module Basic4::Infrastructure::MongoProductRepository
     Basic4::DB.products.find.sort(created_at: -1).map { |doc| hydrate(doc) }
   end
 
+  # Closed auctions only (status "ended"), most-recently-ended first. Backs the
+  # admin back-office view, which is restricted to settled listings.
+  def self.find_ended
+    Basic4::DB.products.find(status: "ended").sort(ended_at: -1).map { |doc| hydrate(doc) }
+  end
+
   def self.find_by_id(id)
     doc = Basic4::DB.products.find(_id: id).first
     doc && hydrate(doc)

@@ -75,6 +75,19 @@ on `/browse` opens a **detail view** with the full description, image, and the c
 **bid history** (newest-first, each bid showing the bidder's name — your own shown as
 "You"); bidding happens there. There's no settlement/checkout step yet.
 
+### Admin (back office)
+
+A third role, `admin`, exists for back-office oversight and is **restricted to
+closed auctions only** — admins never see drafts or live listings. Admins are
+created out-of-band (there is no admin signup; see [CLI utilities](#cli-utilities)),
+then sign in through the normal `/app` login. Their dashboard links to the
+read-only console at **`/admin`**, which lists every **ended** auction across all
+sellers (newest-closed first) and opens each one's detail + full bid history.
+
+The data comes from `GET /api/admin/auctions`, gated by `require_admin!`
+(`role == "admin"`, else `403`); the page itself gates on `/api/me` and shows an
+"administrators only" notice to anyone else.
+
 ---
 
 ## Run with Docker Compose
@@ -145,11 +158,13 @@ isn't implemented — `parallel_greet` is library code, not used by the API.
 | POST   | `/api/products/:id/bid`            | session | `{ amount_cents }` (not own; live; beats current) |
 | POST   | `/api/products/images`             | seller  | multipart `file` → `{ url }` (MinIO)            |
 | GET    | `/api/products/mine`               | seller  | — → caller's own listings                       |
+| GET    | `/admin`                           | none    | admin console page (HTML; gates on `/api/me`)   |
+| GET    | `/api/admin/auctions`              | admin   | — → closed (ended) auctions only, newest-first  |
 | GET    | `/api/me`                          | session | —                                               |
 | POST   | `/api/signout`                     | session | —                                               |
 | GET    | `/api/health`                      | none    | —                                               |
 
-All responses are JSON (except `/browse`). Validation failures return `422` with `{ error, field }`. The session cookie is set on successful signup. **Auth column:** `session` = signed in (`401` otherwise); `seller` = signed in **and** `role == "seller"` (`403` otherwise, via `require_seller!`).
+All responses are JSON (except `/browse`). Validation failures return `422` with `{ error, field }`. The session cookie is set on successful signup. **Auth column:** `session` = signed in (`401` otherwise); `seller` = signed in **and** `role == "seller"` (`403` otherwise, via `require_seller!`); `admin` = signed in **and** `role == "admin"` (`403` otherwise, via `require_admin!`).
 
 ---
 
@@ -258,11 +273,18 @@ rake test
 
 ## CLI utilities
 
-The library ships two small scripts in `bin/`:
+The library ships a few small scripts in `bin/`:
 
 ```bash
 ruby bin/basic4 "Ruby"                # prints: Hello, Ruby!
 ruby bin/basic4-report input.csv out.txt   # writes a score report + average
+
+# Bootstrap a back-office admin (then sign in at /app and open /admin):
+ADMIN_EMAIL=ops@basic4.test ADMIN_PASSWORD=supersecret bin/create_admin
+bin/create_admin ops@basic4.test supersecret "Ops Team"   # positional form
 ```
 
 `bin/basic4-report` expects a CSV with `name,email,score` columns.
+`bin/create_admin` creates the admin (or, if the email already exists, promotes
+that user to `admin` without touching their password). It honors `MONGO_URL` /
+`MONGO_DB` like the app.

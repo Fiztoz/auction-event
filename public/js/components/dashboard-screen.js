@@ -7,18 +7,19 @@ const { onMounted, computed } = Vue;
 export const DashboardScreen = {
   setup() {
     const isSeller = computed(() => state.user.role === "seller");
+    const isAdmin = computed(() => state.user.role === "admin");
     onMounted(() => { if (isSeller.value) loadMyAuctions(); });
-    return { state, isSeller, openEdit, signout, openSell, openEditAuction, becomeSeller, startAuction, stopAuction, currency };
+    return { state, isSeller, isAdmin, openEdit, signout, openSell, openEditAuction, becomeSeller, startAuction, stopAuction, currency };
   },
   template: `
     <div class="card success">
       <div class="check">✓</div>
       <h1>Hi, {{ state.user.name }}</h1>
-      <p class="subtitle">{{ isSeller ? 'Your seller dashboard.' : 'Welcome to Basic4.' }}</p>
+      <p class="subtitle">{{ isAdmin ? 'Administrator account.' : isSeller ? 'Your seller dashboard.' : 'Welcome to Basic4.' }}</p>
       <div class="profile-row">
         <span class="profile-label">Account</span>
         <span class="profile-value">
-          {{ isSeller ? 'Seller' : 'Buyer' }}
+          {{ isAdmin ? 'Admin' : isSeller ? 'Seller' : 'Buyer' }}
         </span>
       </div>
       <div class="profile-row">
@@ -34,8 +35,11 @@ export const DashboardScreen = {
       <div v-if="state.info" class="info">{{ state.info }}</div>
 
       <div class="menu">
-        <button v-if="isSeller" @click="openSell">+ Sell a product at auction</button>
-        <button v-else @click="becomeSeller" :disabled="state.submitting">Become a seller</button>
+        <a v-if="isAdmin" class="link-button" href="/admin">Open admin console →</a>
+        <template v-else>
+          <button v-if="isSeller" @click="openSell">+ Sell a product at auction</button>
+          <button v-else @click="becomeSeller" :disabled="state.submitting">Become a seller</button>
+        </template>
         <a class="link-button" href="/browse">Browse all auctions →</a>
       </div>
 

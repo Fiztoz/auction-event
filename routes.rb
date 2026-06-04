@@ -199,6 +199,21 @@ module Basic4
            bids:    found[:bids].map { |bid| PresentBid.call(bid, viewer_id: session[:user_id]) }
     end
 
+    # ── admin (back office) ───────────────────────────────────────
+
+    # Read-only admin console. The page itself gates on /api/me; the data it
+    # shows comes from the admin-only endpoint below.
+    get "/admin" do
+      erb :admin
+    end
+
+    # Admins may see closed auctions only — never drafts or live listings.
+    get "/api/admin/auctions" do
+      require_admin!
+      products = Basic4::ProductAuction::Application::ListClosedAuctions.call
+      json products: products.map { |product| PresentProduct.call(product) }
+    end
+
     # ── account management ────────────────────────────────────────
 
     patch "/api/profile" do

@@ -43,6 +43,7 @@ require_relative "lib/basic4/product_auction/application/inputs"
 require_relative "lib/basic4/product_auction/application/list_product_for_auction"
 require_relative "lib/basic4/product_auction/application/list_my_auctions"
 require_relative "lib/basic4/product_auction/application/browse_products"
+require_relative "lib/basic4/product_auction/application/list_closed_auctions"
 require_relative "lib/basic4/product_auction/application/update_auction"
 require_relative "lib/basic4/product_auction/application/start_auction"
 require_relative "lib/basic4/product_auction/application/stop_auction"
@@ -103,6 +104,11 @@ module Basic4
       def require_seller!
         require_user!
         halt 403, json(error: "become a seller first") unless current_user&.role == "seller"
+      end
+
+      def require_admin!
+        require_user!
+        halt 403, json(error: "admins only") unless current_user&.role == "admin"
       end
 
       def product_input(body)
