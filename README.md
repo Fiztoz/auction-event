@@ -45,19 +45,42 @@ Worked example — income `80_000`, employed, debt `10_000`, 5y history → **65
 
 ### Auction lifecycle
 
-A listing is created as a **draft**, **started** manually by the seller, and later
-**stopped** manually by the seller:
+A listing is created as a **draft**, **started** and **stopped** manually by the
+seller, then **settled** by the back-office admin:
 
 ```
-  create → draft → (seller Start) → live → (seller Stop) → ended
+  create → draft → (seller Start) → live → (seller Stop) → ended → (admin settlement) → completed
 ```
 
 - **draft** — editable; visible to the seller in "My auctions" and tagged `draft` on `/browse`.
 - **Start** (`POST /api/products/:id/start`) flips it to **live** and records `started_at` and `ends_at` (= `started_at` + `duration_days`). `ends_at` is informational — there is no automatic close.
 - Once **live**, the listing is **locked**: `PUT /api/products/:id` returns `422` (drafts only). Starting an already-live auction also returns `422`.
 - **Stop** (`POST /api/products/:id/stop`) flips **live → ended**, records `ended_at`, and closes bidding (further bids return `422`). The outcome is shown from the highest bid — "Sold for $X to &lt;bidder&gt;", or "Ended — no bids".
+- **Settlement** (see below) flips **ended → completed** once the admin has run the order to completion.
 
-`/browse` lists everything (draft / live / ended), each tagged with its status.
+`/browse` lists everything (draft / live / ended / completed), each tagged with its status.
+
+### Settlement (back-office)
+
+Once an auction is **ended** with a winning bid, the admin (escrow operator) runs
+the order to completion from `/admin`. The admin first sees the real identities of
+both parties — the **seller** and the **winning buyer** (name, email, and the
+buyer's shipping address) — then drives a settlement through four states:
+
+```
+  invoiced → paid → shipped → completed
+```
+
+- **Invoice winner** (`POST /api/admin/products/:id/settlement`) opens the settlement,
+  snapshotting the won amount and the buyer's shipping address. Requires an `ended`
+  auction with a winner that isn't already settled.
+- **Payment** (`POST /api/admin/settlements/:id/payment`) → `paid`.
+- **Shipment** (`POST /api/admin/settlements/:id/shipment`) → `shipped`.
+- **Complete** (`POST /api/admin/settlements/:id/complete`) releases funds to the
+  seller, marks the settlement `completed`, and flips the **auction → completed**.
+
+Each step is guarded; calling them out of order returns `422`. The full party +
+settlement view is `GET /api/admin/auctions/:id`.
 
 ### Bidding
 
@@ -159,7 +182,12 @@ isn't implemented — `parallel_greet` is library code, not used by the API.
 | POST   | `/api/products/images`             | seller  | multipart `file` → `{ url }` (MinIO)            |
 | GET    | `/api/products/mine`               | seller  | — → caller's own listings                       |
 | GET    | `/admin`                           | none    | admin console page (HTML; gates on `/api/me`)   |
-| GET    | `/api/admin/auctions`              | admin   | — → closed (ended) auctions only, newest-first  |
+| GET    | `/api/admin/auctions`              | admin   | — → closed (ended/completed) auctions, newest-first |
+| GET    | `/api/admin/auctions/:id`          | admin   | — → `{ product, bids[], seller, winner, settlement }` (party PII) |
+| POST   | `/api/admin/products/:id/settlement` | admin | — (ended + has winner; opens settlement → `invoiced`) |
+| POST   | `/api/admin/settlements/:id/payment` | admin | — (`invoiced → paid`)                          |
+| POST   | `/api/admin/settlements/:id/shipment`| admin | — (`paid → shipped`)                           |
+| POST   | `/api/admin/settlements/:id/complete`| admin | — (`shipped → completed`; auction → completed) |
 | GET    | `/api/me`                          | session | —                                               |
 | POST   | `/api/signout`                     | session | —                                               |
 | GET    | `/api/health`                      | none    | —                                               |

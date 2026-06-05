@@ -27,7 +27,10 @@ const App = {
     // ends_at arrives as "YYYY-MM-DD HH:MM:SS UTC"; normalize to ISO for Date.
     const endsAtDate = (p) => (p && p.ends_at ? new Date(p.ends_at.replace(" UTC", "Z").replace(" ", "T")) : null);
     const isEnded = (p) => { const d = endsAtDate(p); return d && d < new Date(); };
-    const isClosed = (p) => p && (p.status === "ended" || isEnded(p)); // stopped or time-expired
+    // stopped, settled, or time-expired — bidding is over either way
+    const isClosed = (p) => p && (p.status === "ended" || p.status === "completed" || isEnded(p));
+    // Badge text/class: a settled auction reads "completed"; anything else closed reads "ended".
+    const statusBadge = (p) => (p && p.status === "completed" ? "completed" : (isClosed(p) ? "ended" : p.status));
     const canBid = (p) => p && p.status === "live" && !isEnded(p);
     const isOwn = (p) => me.value && p && me.value.id === p.seller_id;
     const isTopBidder = (p) => me.value && p && me.value.id === p.highest_bidder_id;
@@ -86,7 +89,7 @@ const App = {
 
     return {
       products, me, loading, error, view, selected, selectedBids, detailError,
-      bidDisplay, onBidInput, bidError, currency, currentCents, isEnded, isClosed, canBid, isOwn, isTopBidder,
+      bidDisplay, onBidInput, bidError, currency, currentCents, isEnded, isClosed, statusBadge, canBid, isOwn, isTopBidder,
       bidLabel, openDetail, backToList, placeBid
     };
   },
@@ -108,7 +111,7 @@ const App = {
             <div class="product-card-body">
               <div class="product-card-tags">
                 <span class="badge">{{ p.category }}</span>
-                <span class="badge" :class="isClosed(p) ? 'ended' : p.status">{{ isClosed(p) ? 'ended' : p.status }}</span>
+                <span class="badge" :class="statusBadge(p)">{{ statusBadge(p) }}</span>
               </div>
               <h2 class="product-card-title">{{ p.title }}</h2>
               <p class="product-card-desc">{{ p.description }}</p>
@@ -129,7 +132,7 @@ const App = {
           <img class="detail-img" v-if="selected.images && selected.images.length" :src="selected.images[0]" :alt="selected.title">
           <div class="product-card-tags">
             <span class="badge">{{ selected.category }}</span>
-            <span class="badge" :class="isClosed(selected) ? 'ended' : selected.status">{{ isClosed(selected) ? 'ended' : selected.status }}</span>
+            <span class="badge" :class="statusBadge(selected)">{{ statusBadge(selected) }}</span>
           </div>
           <h1>{{ selected.title }}</h1>
           <p class="detail-desc">{{ selected.description }}</p>

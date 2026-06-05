@@ -50,7 +50,11 @@ export const signup = () => submit("/api/signup", {
 export const login = () => submit("/api/login", {
   email: state.form.email, password: state.form.password
 }, {
-  onSuccess: (user) => emit("UserAuthenticated", { userId: user.id, email: user.email, step: user.step })
+  onSuccess: (user) => {
+    emit("UserAuthenticated", { userId: user.id, email: user.email, step: user.step });
+    // Admins work in the back-office console, not the buyer/seller dashboard.
+    if (user.role === "admin") window.location.assign("/admin");
+  }
 });
 
 export const switchToLogin  = () => { state.authMode = "login";  clearMessages(); };

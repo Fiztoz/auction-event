@@ -16,7 +16,7 @@ end
 # `Data.define do ... end` block leak to the lexical scope, not the class.
 class Basic4::Product
   CATEGORIES      = %w[electronics collectibles fashion home toys other].freeze
-  STATUSES        = %w[draft live ended].freeze
+  STATUSES        = %w[draft live ended completed].freeze
   DURATION_DAYS   = (1..30)
   MIN_PRICE_CENTS = 1
   MAX_TITLE       = 120
@@ -94,6 +94,13 @@ class Basic4::Product
   def stop(at:)
     return Basic4::Result.failure(:status, "only live auctions can be stopped") unless status == "live"
     Basic4::Result.success(with(status: "ended", ended_at: at, updated_at: at))
+  end
+
+  # Closes out a settled auction: ended -> completed. Driven by the settlement
+  # workflow once funds have been released to the seller (see Basic4::Settlement).
+  def mark_completed(at:)
+    return Basic4::Result.failure(:status, "auction is not ended") unless status == "ended"
+    Basic4::Result.success(with(status: "completed", updated_at: at))
   end
 
   # Applies an edit to an existing listing. Same validation as create; preserves

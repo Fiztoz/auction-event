@@ -16,6 +16,7 @@ module TestHelper
     Basic4::DB.users.drop
     Basic4::DB.products.drop
     Basic4::DB.bids.drop
+    Basic4::DB.settlements.drop
     Basic4::DB.ensure_indexes!
   rescue Mongo::Error
     skip "MongoDB not available"

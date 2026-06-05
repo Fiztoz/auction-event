@@ -12,8 +12,11 @@ require_relative "lib/basic4/shared/product"
 require_relative "lib/basic4/shared/product_presenter"
 require_relative "lib/basic4/shared/bid"
 require_relative "lib/basic4/shared/bid_presenter"
+require_relative "lib/basic4/shared/settlement"
+require_relative "lib/basic4/shared/settlement_presenter"
 require_relative "lib/basic4/shared/ports/product_repository"
 require_relative "lib/basic4/shared/ports/bid_repository"
+require_relative "lib/basic4/shared/ports/settlement_repository"
 require_relative "lib/basic4/shared/ports/object_storage"
 require_relative "lib/basic4/shared/container"
 
@@ -51,6 +54,13 @@ require_relative "lib/basic4/product_auction/application/place_bid"
 require_relative "lib/basic4/product_auction/application/show_auction"
 require_relative "lib/basic4/product_auction/application/upload_image"
 
+require_relative "lib/basic4/settlement/application/invoice_winner"
+require_relative "lib/basic4/settlement/application/record_payment"
+require_relative "lib/basic4/settlement/application/record_shipment"
+require_relative "lib/basic4/settlement/application/complete_settlement"
+require_relative "lib/basic4/settlement/application/admin_auction_detail"
+require_relative "lib/basic4/settlement/application/list_settlement_queue"
+
 module Basic4
   class OnboardingApp < Sinatra::Base
     set :root, File.expand_path("..", __FILE__)
@@ -62,6 +72,7 @@ module Basic4
     Present = Basic4::UserPresenter
     PresentProduct = Basic4::ProductPresenter
     PresentBid = Basic4::BidPresenter
+    PresentSettlement = Basic4::SettlementPresenter
 
     configure :production, :development do
       begin

@@ -454,8 +454,60 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .badge.live   { color: #fff; background: var(--cb-success); border-color: var(--cb-success); }
 .badge.draft  { color: var(--cb-muted); background: var(--cb-bg-soft); border-color: var(--cb-border); }
 .badge.ended  { color: #fff; background: var(--cb-ink-soft); border-color: var(--cb-ink-soft); }
+.badge.completed { color: #fff; background: var(--cb-success); border-color: var(--cb-success); }
 .sold { margin: 0; font-weight: 600; color: var(--cb-success); }
 .product-card-tags { display: flex; gap: 0.375rem; }
+
+/* Admin: party (seller / winner) identity cards */
+.party-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.party-card h3 { margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--cb-muted); }
+.party-name { margin: 0 0 0.25rem; font-weight: 600; }
+.party-line { margin: 0.1rem 0; color: var(--cb-ink-soft); font-size: 0.9rem; }
+
+/* Admin: console tabs */
+.admin-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.admin-nav button {
+  width: auto;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: var(--cb-bg-soft);
+  color: var(--cb-ink);
+  border: 1px solid var(--cb-border);
+}
+.admin-nav button.active { background: var(--cb-blue); color: #fff; border-color: var(--cb-blue); }
+.admin-nav .badge { margin-left: 0.4rem; background: var(--cb-error); color: #fff; border-color: var(--cb-error); }
+
+/* Admin: settlement queue */
+.settlement-queue { display: flex; flex-direction: column; gap: 0.75rem; }
+.settlement-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--cb-bg);
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius);
+}
+.settlement-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.settlement-thumb.is-empty { background: var(--cb-bg-soft); border: 1px solid var(--cb-border); }
+.settlement-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.settlement-row-title { font-weight: 600; }
+.settlement-row-action { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
+.settlement-row-action button { width: auto; white-space: nowrap; }
+
+/* Admin: settlement workflow */
+.settlement { margin: 1.25rem 0; }
+.settlement-steps { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+.settlement-step {
+  text-transform: capitalize;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--cb-muted);
+  background: var(--cb-bg-soft);
+  border: 1px solid var(--cb-border);
+}
+.settlement-step.done { color: #fff; background: var(--cb-success); border-color: var(--cb-success); }
 
 .product-grid {
   display: grid;

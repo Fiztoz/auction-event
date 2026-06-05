@@ -55,7 +55,7 @@ export const DashboardScreen = {
             <span class="auction-meta" v-if="a.status === 'live'">
               {{ currency(a.current_bid_cents || a.starting_price_cents) }} · {{ a.bid_count }} bid{{ a.bid_count === 1 ? '' : 's' }}
             </span>
-            <span class="auction-meta" v-else-if="a.status === 'ended'">
+            <span class="auction-meta" v-else-if="a.status === 'ended' || a.status === 'completed'">
               {{ a.current_bid_cents ? 'Sold for ' + currency(a.current_bid_cents) + ' · ' + a.bid_count + ' bid' + (a.bid_count === 1 ? '' : 's') : 'Ended — no bids' }}
             </span>
             <span class="auction-meta" v-else>{{ currency(a.starting_price_cents) }} · {{ a.duration_days }}d</span>

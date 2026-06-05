@@ -214,6 +214,61 @@ module Basic4
       json products: products.map { |product| PresentProduct.call(product) }
     end
 
+    # Full back-office view of one closed auction: the listing, its bids, the
+    # real identities of seller + winner, and the settlement (if opened). Declared
+    # after the collection route so the :id wildcard doesn't swallow it.
+    get "/api/admin/auctions/:id" do
+      require_admin!
+      found = Basic4::Settlement::Application::AdminAuctionDetail.call(params["id"])
+      halt 404, json(error: "not found") unless found
+      json product:    PresentProduct.call(found[:product]),
+           bids:       found[:bids].map { |bid| PresentBid.call(bid, viewer_id: session[:user_id]) },
+           seller:     PresentSettlement.party(found[:seller]),
+           winner:     PresentSettlement.party(found[:winner]),
+           settlement: found[:settlement] && PresentSettlement.call(found[:settlement])
+    end
+
+    # Settlement queue: every closed auction with a winner, plus its winner and
+    # current settlement state — what the admin needs to action, at a glance.
+    get "/api/admin/settlements" do
+      require_admin!
+      rows = Basic4::Settlement::Application::ListSettlementQueue.call
+      json items: rows.map { |row|
+        {
+          product:    PresentProduct.call(row[:product]),
+          winner:     PresentSettlement.party(row[:winner]),
+          settlement: row[:settlement] && PresentSettlement.call(row[:settlement])
+        }
+      }
+    end
+
+    # Admin opens a settlement by invoicing the winner of an ended auction.
+    post "/api/admin/products/:id/settlement" do
+      require_admin!
+      result = Basic4::Settlement::Application::InvoiceWinner.call(params["id"])
+      respond_with(result, success_status: 201) { |s| json settlement: PresentSettlement.call(s) }
+    end
+
+    # Admin advances a settlement through its lifecycle.
+    post "/api/admin/settlements/:id/payment" do
+      require_admin!
+      result = Basic4::Settlement::Application::RecordPayment.call(params["id"])
+      respond_with(result) { |s| json settlement: PresentSettlement.call(s) }
+    end
+
+    post "/api/admin/settlements/:id/shipment" do
+      require_admin!
+      result = Basic4::Settlement::Application::RecordShipment.call(params["id"])
+      respond_with(result) { |s| json settlement: PresentSettlement.call(s) }
+    end
+
+    # Releases funds to the seller and marks the auction completed.
+    post "/api/admin/settlements/:id/complete" do
+      require_admin!
+      result = Basic4::Settlement::Application::CompleteSettlement.call(params["id"])
+      respond_with(result) { |s| json settlement: PresentSettlement.call(s) }
+    end
+
     # ── account management ────────────────────────────────────────
 
     patch "/api/profile" do
