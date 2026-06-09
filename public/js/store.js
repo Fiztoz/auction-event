@@ -24,6 +24,12 @@ export const state = reactive({
   myAuctions: [],
   editingProductId: null,
   imageUploading: false,
+  // ── notifications ───────────────────────────────────────────
+  notifications: [],
+  unreadCount: 0,
+  notificationPanelOpen: false,
+  // ── admin: pending products ─────────────────────────────────
+  pendingProducts: [],
   form: emptyForm()
 });
 

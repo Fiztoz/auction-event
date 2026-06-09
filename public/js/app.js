@@ -1,5 +1,5 @@
 import { state } from "./store.js";
-import { refreshMe } from "./actions.js";
+import { refreshMe, loadUnreadCount } from "./actions.js";
 import { install as installConsoleLogger } from "./subscribers/console-logger.js";
 import { SignupScreen } from "./components/signup-screen.js";
 import { LoginScreen } from "./components/login-screen.js";
@@ -31,7 +31,10 @@ const App = {
         state.form.reset_token = resetToken;
         state.authMode = "password_reset";
       }
-      refreshMe();
+      refreshMe().then(() => {
+        // Once we know who the user is, kick off notification polling.
+        if (state.user) loadUnreadCount();
+      });
     });
 
     return { state, step };

@@ -42,4 +42,8 @@ module Basic4
       module Inputs; end
     end
   end
+
+  module Admin
+    module Application; end
+  end
 end

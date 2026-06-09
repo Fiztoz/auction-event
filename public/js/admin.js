@@ -3,11 +3,13 @@ import { currency } from "./format.js";
 
 const { createApp, ref, computed, onMounted } = Vue;
 
-// Back-office console. Three tabs:
+// Back-office console. Four tabs:
 //   • Closed auctions      — read-only catalogue of ended/completed listings.
 //   • Settlements          — the work queue: every closed auction with a winner, with
 //                            its current state and the next action the admin can take.
 //   • Seller Applications  — buyers who submitted a credit score and await approval.
+//   • Pending Products     — product listings that sellers have submitted and await approval
+//                            before they can go live.
 const SETTLEMENT_STEPS = ["invoiced", "paid", "shipped", "completed"];
 
 // The next action for a settlement, given its current row. null once completed.
@@ -25,11 +27,12 @@ const App = {
     const products = ref([]);
     const queue = ref([]);
     const applicants = ref([]);
+    const pendingProducts = ref([]);
     const me = ref(null);
     const loading = ref(true);
     const error = ref("");
 
-    const view = ref("list");      // 'list' | 'settlements' | 'applications' | 'detail'
+    const view = ref("list");      // 'list' | 'settlements' | 'applications' | 'pending' | 'detail'
     const selected = ref(null);
     const selectedBids = ref([]);
     const seller = ref(null);
@@ -39,10 +42,17 @@ const App = {
     const acting = ref(false);
     const actionError = ref("");
     const appError = ref("");
+    const pendingError = ref("");
+    const info = ref("");
+
+    // Reject modal state
+    const rejecting = ref(null);
+    const rejectReason = ref("");
 
     const isAdmin = computed(() => me.value && me.value.role === "admin");
     const pendingCount = computed(() => queue.value.filter((r) => !r.settlement || r.settlement.status !== "completed").length);
     const applicantCount = computed(() => applicants.value.length);
+    const pendingProductCount = computed(() => pendingProducts.value.length);
 
     const currentCents = (p) => p.current_bid_cents || p.starting_price_cents;
     const bidLabel = (p) => (p.bid_count > 0 ? `${p.bid_count} bid${p.bid_count === 1 ? "" : "s"}` : "No bids");
@@ -55,6 +65,10 @@ const App = {
     const loadProducts = async () => { products.value = (await api("/api/admin/auctions")).products; };
     const loadQueue = async () => { queue.value = (await api("/api/admin/settlements")).items; };
     const loadApplicants = async () => { applicants.value = (await api("/api/admin/seller-applications")).applicants; };
+    const loadPendingProducts = async () => {
+      try { pendingProducts.value = (await api("/api/admin/pending-products")).products; }
+      catch (e) { pendingError.value = e.message; }
+    };
 
     const loadDetail = async (id) => {
       const data = await api(`/api/admin/auctions/${id}`);
@@ -88,6 +102,48 @@ const App = {
       view.value = "applications";
       appError.value = "";
       try { await loadApplicants(); } catch (e) { appError.value = e.message; }
+    };
+    const showPending = async () => {
+      view.value = "pending";
+      pendingError.value = "";
+      try { await loadPendingProducts(); } catch (e) { pendingError.value = e.message; }
+    };
+
+    const approvePending = async (product) => {
+      acting.value = true;
+      pendingError.value = "";
+      info.value = "";
+      try {
+        await api(`/api/admin/products/${product.id}/approve`, { method: "POST" });
+        info.value = `Approved "${product.title}". The seller has been notified.`;
+        await loadPendingProducts();
+      } catch (e) { pendingError.value = e.message; }
+      finally { acting.value = false; }
+    };
+    const openRejectModal = (product) => {
+      rejecting.value = product;
+      rejectReason.value = "";
+    };
+    const cancelReject = () => { rejecting.value = null; rejectReason.value = ""; };
+    const confirmReject = async () => {
+      if (!rejecting.value) return;
+      if (!rejectReason.value.trim()) {
+        pendingError.value = "Rejection reason is required.";
+        return;
+      }
+      acting.value = true;
+      pendingError.value = "";
+      info.value = "";
+      try {
+        await api(`/api/admin/products/${rejecting.value.id}/reject`, {
+          method: "POST",
+          body: { reason: rejectReason.value.trim() }
+        });
+        info.value = `Rejected "${rejecting.value.title}". The seller has been notified.`;
+        cancelReject();
+        await loadPendingProducts();
+      } catch (e) { pendingError.value = e.message; }
+      finally { acting.value = false; }
     };
 
     const approveApplicant = async (id) => {
@@ -135,7 +191,7 @@ const App = {
       try { me.value = (await api("/api/me")).user; } catch (_) { me.value = null; }
       if (!isAdmin.value) { loading.value = false; return; }
       try {
-        await Promise.all([loadProducts(), loadQueue()]);
+        await Promise.all([loadProducts(), loadQueue(), loadPendingProducts()]);
       } catch (e) {
         error.value = e.message;
       } finally {
@@ -143,14 +199,26 @@ const App = {
       }
     });
 
+    const timeAgo = (iso) => {
+      if (!iso) return "";
+      const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+      if (diff < 60) return "just now";
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return `${Math.floor(diff / 86400)}d ago`;
+    };
+
     return {
-      products, queue, applicants, me, loading, error, isAdmin, pendingCount, applicantCount, view,
-      selected, selectedBids, seller, winner, settlement, detailError, acting, actionError, appError,
+      products, queue, applicants, pendingProducts, me, loading, error, isAdmin,
+      pendingCount, applicantCount, pendingProductCount, view,
+      selected, selectedBids, seller, winner, settlement, detailError, acting, actionError, appError, pendingError, info,
+      rejecting, rejectReason,
       currency, currentCents, bidLabel, statusBadge, settlementState, addressLines,
-      stepReached, nextActionFor, steps: SETTLEMENT_STEPS,
-      openDetail, showList, showSettlements, showApplications, advanceRow,
+      stepReached, nextActionFor, steps: SETTLEMENT_STEPS, timeAgo,
+      openDetail, showList, showSettlements, showApplications, showPending, advanceRow,
       invoiceWinner, recordPayment, recordShipment, completeOrder,
-      approveApplicant, rejectApplicant
+      approveApplicant, rejectApplicant,
+      approvePending, openRejectModal, cancelReject, confirmReject
     };
   },
   template: `
@@ -175,6 +243,10 @@ const App = {
           <button type="button" :class="{ active: view === 'applications' }" @click="showApplications">
             Seller Applications
             <span class="badge" v-if="applicantCount">{{ applicantCount }}</span>
+          </button>
+          <button type="button" :class="{ active: view === 'pending' }" @click="showPending">
+            Pending Products
+            <span class="badge" v-if="pendingProductCount">{{ pendingProductCount }}</span>
           </button>
         </div>
 
@@ -268,6 +340,42 @@ const App = {
           </div>
         </template>
 
+        <!-- PENDING PRODUCTS (seller approval queue) -->
+        <template v-else-if="view === 'pending'">
+          <h1>Pending Products</h1>
+          <p class="subtitle">Listings sellers submitted for review. Approve to let them start the auction, or reject with a reason.</p>
+
+          <div class="info" v-if="info">{{ info }}</div>
+          <div class="error" v-if="pendingError">{{ pendingError }}</div>
+
+          <div class="card" v-if="!pendingProducts.length && !pendingError">No products awaiting approval. 🎉</div>
+
+          <div class="pending-list" v-else>
+            <div class="pending-row" v-for="p in pendingProducts" :key="p.id">
+              <div class="pending-thumb" v-if="p.images && p.images.length">
+                <img :src="p.images[0]" :alt="p.title">
+              </div>
+              <div class="pending-thumb" v-else>No photo</div>
+
+              <div class="pending-main">
+                <div class="pending-title">
+                  {{ p.title }}
+                  <span class="badge pending_approval">awaiting approval</span>
+                </div>
+                <div class="pending-meta">
+                  {{ p.category }} · {{ currency(p.starting_price_cents) }} · {{ p.duration_days }}d · submitted {{ timeAgo(p.created_at) }}
+                </div>
+                <div class="pending-desc" v-if="p.description">{{ p.description }}</div>
+              </div>
+
+              <div class="pending-actions">
+                <button type="button" class="btn-approve" @click="approvePending(p)" :disabled="acting">Approve</button>
+                <button type="button" class="btn-reject"  @click="openRejectModal(p)" :disabled="acting">Reject</button>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <!-- DETAIL -->
         <template v-else-if="selected">
           <a class="link-button" href="#" @click.prevent="showList">← All closed auctions</a>
@@ -343,6 +451,21 @@ const App = {
           </div>
         </template>
       </template>
+
+      <!-- REJECT MODAL (always rendered when a product is being rejected) -->
+      <div class="reject-modal-backdrop" v-if="rejecting" @click.self="cancelReject">
+        <div class="reject-modal">
+          <h3>Reject product</h3>
+          <p>Provide a reason — the seller will see this and can edit &amp; resubmit.</p>
+          <p v-if="rejecting"><strong>{{ rejecting.title }}</strong></p>
+          <textarea v-model="rejectReason" placeholder="e.g., Description is too vague; please add measurements."></textarea>
+          <div class="error" v-if="pendingError && rejecting">{{ pendingError }}</div>
+          <div class="reject-modal-actions">
+            <button type="button" class="link-button" @click="cancelReject">Cancel</button>
+            <button type="button" class="btn-reject" @click="confirmReject" :disabled="acting">Reject</button>
+          </div>
+        </div>
+      </div>
     </section>
   `
 };

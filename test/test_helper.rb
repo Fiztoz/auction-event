@@ -17,6 +17,7 @@ module TestHelper
     Basic4::DB.products.drop
     Basic4::DB.bids.drop
     Basic4::DB.settlements.drop
+    Basic4::DB.notifications.drop
     Basic4::DB.ensure_indexes!
   rescue Mongo::Error
     skip "MongoDB not available"
@@ -54,7 +55,10 @@ module TestHelper
   end
 
   # Buyer onboarding + the "become a seller" upgrade. Returns a seller.
+  # Records the email so `create_draft!` can sign back in after admin approval.
   def complete_seller_onboarding!(email: "ada@example.com", password: "password1", name: "Ada")
+    @last_seller_email = email
+    @last_seller_password = password
     complete_onboarding!(email: email, password: password, name: name)
     post_json "/api/onboarding/become-seller"
     post_json "/api/onboarding/credit-score",

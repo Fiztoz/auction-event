@@ -337,3 +337,94 @@ export const stopAuction = async (product) => {
     state.submitting = false;
   }
 };
+
+// ── notifications ─────────────────────────────────────────────────────
+
+export const loadNotifications = async () => {
+  try {
+    const { notifications, unread_count } = await api("/api/notifications");
+    state.notifications = notifications || [];
+    state.unreadCount = unread_count || 0;
+  } catch (_) {
+    // non-fatal: user may not be signed in
+  }
+};
+
+export const loadUnreadCount = async () => {
+  try {
+    const { unread_count } = await api("/api/notifications/unread-count");
+    state.unreadCount = unread_count || 0;
+  } catch (_) {
+    state.unreadCount = 0;
+  }
+};
+
+export const markNotificationRead = async (id) => {
+  try {
+    await api(`/api/notifications/${id}/read`, { method: "PATCH" });
+    const n = state.notifications.find((x) => x.id === id);
+    if (n && !n.read) {
+      n.read = true;
+      n.read_at = new Date();
+      state.unreadCount = Math.max(0, state.unreadCount - 1);
+    }
+    emit("NotificationRead", { notificationId: id });
+  } catch (e) {
+    state.error = e.message;
+  }
+};
+
+export const toggleNotificationPanel = () => {
+  state.notificationPanelOpen = !state.notificationPanelOpen;
+  if (state.notificationPanelOpen) {
+    loadNotifications();
+  }
+};
+
+// ── admin: product approval ───────────────────────────────────────────
+
+export const loadPendingProducts = async () => {
+  try {
+    const { products } = await api("/api/admin/pending-products");
+    state.pendingProducts = products;
+  } catch (e) {
+    state.error = e.message;
+  }
+};
+
+export const approveProduct = async (product) => {
+  state.submitting = true;
+  clearMessages();
+  try {
+    const { product: approved } = await api(`/api/admin/products/${product.id}/approve`, { method: "POST" });
+    state.pendingProducts = state.pendingProducts.filter((p) => p.id !== product.id);
+    state.info = `Approved "${approved.title}". The seller has been notified.`;
+    emit("ProductApproved", { productId: approved.id, sellerId: approved.seller_id });
+  } catch (e) {
+    state.error = e.message;
+  } finally {
+    state.submitting = false;
+  }
+};
+
+export const rejectProduct = async (product, reason) => {
+  if (!reason || !reason.trim()) {
+    state.error = "Rejection reason is required.";
+    return;
+  }
+  state.submitting = true;
+  clearMessages();
+  try {
+    const { product: rejected } = await api(`/api/admin/products/${product.id}/reject`, {
+      method: "POST",
+      body: { reason: reason.trim() }
+    });
+    state.pendingProducts = state.pendingProducts.filter((p) => p.id !== product.id);
+    state.info = `Rejected "${rejected.title}". The seller has been notified.`;
+    emit("ProductRejected", { productId: rejected.id, sellerId: rejected.seller_id, reason });
+  } catch (e) {
+    state.error = e.message;
+  } finally {
+    state.submitting = false;
+  }
+};

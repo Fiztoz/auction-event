@@ -7,6 +7,7 @@ module Basic4
     :starting_price_cents, :duration_days, :images, :status,
     :started_at, :ends_at, :ended_at,
     :current_bid_cents, :bid_count, :highest_bidder_id,
+    :approved_at, :rejection_reason,
     :created_at, :updated_at
   )
 end
@@ -16,7 +17,7 @@ end
 # `Data.define do ... end` block leak to the lexical scope, not the class.
 class Basic4::Product
   CATEGORIES      = %w[electronics collectibles fashion home toys other].freeze
-  STATUSES        = %w[draft live ended completed].freeze
+  STATUSES        = %w[pending_approval draft live ended completed rejected].freeze
   DURATION_DAYS   = (1..30)
   MIN_PRICE_CENTS = 1
   MAX_TITLE       = 120
@@ -25,6 +26,8 @@ class Basic4::Product
 
   # Builds a new auction listing, validating its fields. Returns a
   # Basic4::Result wrapping the Product (Success) or a field error (Failure).
+  # New products start in "pending_approval" status — they must be approved
+  # by an admin before the seller can start the auction.
   def self.create(id:, seller_id:, title:, description:, category:, starting_price_cents:, duration_days:, images: [], at:)
     validate(
       title: title, description: description, category: category,
@@ -39,17 +42,55 @@ class Basic4::Product
         starting_price_cents: v[:starting_price_cents],
         duration_days:        v[:duration_days],
         images:               v[:images],
-        status:               "draft",
+        status:               "pending_approval",
         started_at:           nil,
         ends_at:              nil,
         ended_at:             nil,
         current_bid_cents:    nil,
         bid_count:            0,
         highest_bidder_id:    nil,
+        approved_at:          nil,
+        rejection_reason:     nil,
         created_at:           at,
         updated_at:           at
       )
     end
+  end
+
+  # Admin approves a pending product: pending_approval -> draft, recording
+  # the approval timestamp. The seller can then start the auction normally.
+  def approve(at:)
+    return Basic4::Result.failure(:status, "product is not awaiting approval") unless status == "pending_approval"
+    Basic4::Result.success(with(
+      status:           "draft",
+      approved_at:      at,
+      rejection_reason: nil,
+      updated_at:       at
+    ))
+  end
+
+  # Admin rejects a pending product: pending_approval -> rejected, recording
+  # the reason. The seller can edit and resubmit, which resets to pending_approval.
+  def reject(reason:, at:)
+    return Basic4::Result.failure(:status, "product is not awaiting approval") unless status == "pending_approval"
+    stripped = reason.to_s.strip
+    return Basic4::Result.failure(:reason, "rejection reason required") if stripped.empty?
+    Basic4::Result.success(with(
+      status:           "rejected",
+      rejection_reason: stripped,
+      updated_at:       at
+    ))
+  end
+
+  # Resubmits a rejected product for approval: rejected -> pending_approval.
+  # Called when the seller edits a rejected product.
+  def resubmit(at:)
+    return Basic4::Result.failure(:status, "only rejected products can be resubmitted") unless status == "rejected"
+    Basic4::Result.success(with(
+      status:           "pending_approval",
+      rejection_reason: nil,
+      updated_at:       at
+    ))
   end
 
   # Places a bid. First bid must be >= starting price; each later bid must
@@ -105,12 +146,18 @@ class Basic4::Product
 
   # Applies an edit to an existing listing. Same validation as create; preserves
   # identity (id/seller_id/status/created_at) and bumps updated_at.
+  # Editable in pending_approval (before first review), draft (before start),
+  # and rejected (to fix and resubmit). Editing a rejected product auto-resubmits.
   def update_details(title:, description:, category:, starting_price_cents:, duration_days:, images:, at:)
-    return Basic4::Result.failure(:status, "only draft auctions can be edited") unless status == "draft"
+    unless %w[pending_approval draft rejected].include?(status)
+      return Basic4::Result.failure(:status, "auction cannot be edited in current state")
+    end
     self.class.validate(
       title: title, description: description, category: category,
       starting_price_cents: starting_price_cents, duration_days: duration_days, images: images
     ).map do |v|
+      new_status = status == "rejected" ? "pending_approval" : status
+      new_approved_at = status == "rejected" ? nil : approved_at
       with(
         title:                v[:title],
         description:          v[:description],
@@ -118,6 +165,9 @@ class Basic4::Product
         starting_price_cents: v[:starting_price_cents],
         duration_days:        v[:duration_days],
         images:               v[:images],
+        status:               new_status,
+        approved_at:          new_approved_at,
+        rejection_reason:     status == "rejected" ? nil : rejection_reason,
         updated_at:           at
       )
     end

@@ -14,6 +14,14 @@ class TestBidding < Minitest::Test
     complete_seller_onboarding!(email: seller_email)
     post_json "/api/products", LISTING
     id = JSON.parse(last_response.body).dig("product", "id")
+    # Approve as admin before the seller can start.
+    post "/api/signout"
+    create_admin!(email: "admin@example.com")
+    post_json "/api/login", email: "admin@example.com", password: "password1"
+    post_json "/api/admin/products/#{id}/approve"
+    # Sign back in as the seller and start.
+    post "/api/signout"
+    post_json "/api/login", email: seller_email, password: "password1"
     post_json "/api/products/#{id}/start"
     id
   end
@@ -124,10 +132,14 @@ end
 class TestBiddingRules < Minitest::Test
   def live_auction
     t = Time.now
-    Basic4::Product.create(
+    product = Basic4::Product.create(
       id: "p1", seller_id: "seller", title: "t", description: "d", category: "home",
       starting_price_cents: 5000, duration_days: 7, images: [], at: t
-    ).value.start(at: t).value
+    ).value
+
+    # Admin must approve before starting
+    approved = product.approve(at: t)
+    approved.value.start(at: t).value
   end
 
   def test_rejects_bids_after_ends_at

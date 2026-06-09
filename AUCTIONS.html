@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic4 — Complete User Journey Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --bg-card: #111420;
+      --bg-elevated: #161b2a;
+      --border: #1e2740;
+      --border-light: #2a3550;
+      --text: #c9d1e3;
+      --text-muted: #7b8ab0;
+      --text-dim: #4a5578;
+      --accent: #00d4aa;
+      --accent-soft: #00d4aa22;
+      --accent-glow: #00d4aa44;
+      --danger: #ff6b6b;
+      --danger-soft: #ff6b6b22;
+      --warning: #f0c040;
+      --warning-soft: #f0c04022;
+      --info: #5b8def;
+      --info-soft: #5b8def22;
+      --purple: #a78bfa;
+      --purple-soft: #a78bfa22;
+      --success: #00d4aa;
+      --success-soft: #00d4aa22;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 80px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+      min-height: 100vh;
+    }
+
+    /* ═══════ SIDEBAR ═══════ */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 300px;
+      height: 100vh;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      z-index: 100;
+      padding: 28px 20px;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-brand .dot {
+      width: 12px; height: 12px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .sidebar-brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .sidebar-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      padding-left: 24px;
+    }
+
+    .sidebar-section {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      margin: 20px 0 10px 0;
+      padding-left: 8px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      margin-bottom: 2px;
+    }
+
+    .sidebar a:hover {
+      background: var(--bg-elevated);
+      color: var(--text);
+    }
+
+    .sidebar a.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .sidebar a .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-right: 6px;
+    }
+
+    /* ═══════ MAIN ═══════ */
+    .main {
+      margin-left: 300px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 48px 80px;
+    }
+
+    /* ═══════ HERO ═══════ */
+    .hero {
+      padding: 60px 0 40px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+
+    .hero h1 {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero .subtitle {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      max-width: 600px;
+    }
+
+    .hero .meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero .meta .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+    }
+
+    .hero .meta .badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ═══════ SECTIONS ═══════ */
+    section {
+      margin-bottom: 56px;
+    }
+
+    h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      margin-bottom: 8px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h2 .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.4px;
+      margin: 36px 0 16px;
+      color: var(--text);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 28px 0 12px;
+      color: var(--accent);
+    }
+
+    p { margin-bottom: 14px; color: var(--text-muted); }
+
+    strong { color: var(--text); font-weight: 600; }
+
+    /* ═══════ CARDS ═══════ */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 20px 0;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    /* ═══════ TABLES ═══════ */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 14px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    tr:hover td {
+      background: var(--bg-elevated);
+      color: var(--text);
+    }
+
+    /* ═══════ CODE ═══════ */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: var(--bg-elevated);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    pre {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    /* ═══════ MERMAID ═══════ */
+    .mermaid-wrapper {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin: 28px -60px;
+      min-height: 180px;
+      overflow-x: auto;
+      cursor: zoom-in;
+      transition: all 0.2s;
+    }
+
+    .mermaid-wrapper:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft), 0 4px 24px rgba(0,212,170,0.08);
+    }
+
+    .mermaid-wrapper::before {
+      content: '🔍 Click to expand';
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--bg-elevated);
+      padding: 4px 10px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .mermaid-wrapper:hover::before {
+      opacity: 1;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 160px;
+      overflow: visible;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      min-width: 500px;
+      height: auto;
+    }
+
+    /* ═══════ MODAL ═══════ */
+    .diagram-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.2s;
+    }
+
+    .diagram-modal.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      position: relative;
+      width: 95%;
+      height: 95%;
+      background: var(--bg);
+      border-radius: var(--radius);
+      overflow: auto;
+      padding: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content svg {
+      max-width: none;
+      transition: transform 0.2s;
+      transform-origin: center;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+
+    .modal-close:hover {
+      background: var(--danger);
+      border-color: var(--danger);
+      transform: scale(1.1);
+    }
+
+    .modal-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 8px;
+      z-index: 10;
+    }
+
+    .modal-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg);
+    }
+
+    .modal-btn:active {
+      transform: scale(0.95);
+    }
+
+    .zoom-level {
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ═══════ BADGES ═══════ */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .badge-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .badge-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .badge-info {
+      background: var(--info-soft);
+      color: var(--info);
+      border: 1px solid var(--info);
+    }
+
+    .badge-purple {
+      background: var(--purple-soft);
+      color: var(--purple);
+      border: 1px solid var(--purple);
+    }
+
+    /* ═══════ LISTS ═══════ */
+    ol, ul {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    li strong { color: var(--text); }
+
+    /* ═══════ FLOW STEPS ═══════ */
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 20px 0;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border-left: 3px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+      position: relative;
+    }
+
+    .flow-step:first-child {
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
+    }
+
+    .flow-step:last-child {
+      border-bottom: 1px solid var(--border);
+      border-bottom-left-radius: var(--radius);
+      border-bottom-right-radius: var(--radius);
+    }
+
+    .flow-step .step-num {
+      width: 32px; height: 32px;
+      min-width: 32px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .flow-step .step-content {
+      flex: 1;
+    }
+
+    .flow-step .step-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .flow-step .step-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .flow-step .step-desc code {
+      font-size: 12px;
+    }
+
+    .flow-step .step-arrow {
+      position: absolute;
+      bottom: -12px;
+      left: 32px;
+      color: var(--accent);
+      font-size: 16px;
+      z-index: 2;
+    }
+
+    /* ═══════ STATE GRID ═══════ */
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .state-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+
+    .state-card .state-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .state-card .state-value {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ═══════ API ENDPOINTS ═══════ */
+    .api-endpoint {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .api-endpoint:hover {
+      background: var(--bg-elevated);
+    }
+
+    .api-endpoint .method {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      min-width: 56px;
+      text-align: center;
+    }
+
+    .method-get { background: var(--info-soft); color: var(--info); }
+    .method-post { background: var(--success-soft); color: var(--success); }
+    .method-put { background: var(--warning-soft); color: var(--warning); }
+    .method-patch { background: var(--purple-soft); color: var(--purple); }
+
+    .api-endpoint .path {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .api-endpoint .desc {
+      color: var(--text-muted);
+      margin-left: auto;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ═══════ EVENTS ═══════ */
+    .event-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+
+    .event-item .event-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .event-item .event-name {
+      color: var(--text);
+      font-weight: 500;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    .event-item .event-desc {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-left: auto;
+    }
+
+    /* ═══════ RESPONSIVE ═══════ */
+    @media (max-width: 1200px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 20px;
+      }
+      .main { margin-left: 0; }
+      .container { padding: 24px 16px; max-width: 100%; }
+      .mermaid-wrapper { margin: 24px 0; }
+      .hero h1 { font-size: 28px; }
+      h2 { font-size: 22px; }
+      .state-grid { grid-template-columns: 1fr; }
+      .event-list { grid-template-columns: 1fr; }
+    }
+
+    /* ═══════ SCROLLBAR ═══════ */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    /* ═══════ ANCHOR OFFSET ═══════ */
+    section[id]::before {
+      content: '';
+      display: block;
+      height: 80px;
+      margin-top: -80px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════ SIDEBAR ═══════ -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="dot"></div>
+      <h1>Basic4</h1>
+    </div>
+    <div class="sidebar-sub">User Journey Map</div>
+
+    <div class="sidebar-section">Overview</div>
+    <a href="#s1"><span class="num">1</span>System Overview</a>
+    <a href="#s2"><span class="num">2</span>Guest Journey</a>
+    <a href="#s3"><span class="num">3</span>Buyer Journey</a>
+    <a href="#s4"><span class="num">4</span>Seller Journey</a>
+    <a href="#s5"><span class="num">5</span>Admin Journey</a>
+
+    <div class="sidebar-section">Lifecycles</div>
+    <a href="#s6"><span class="num">6</span>Auction Lifecycle</a>
+    <a href="#s7"><span class="num">7</span>Settlement Lifecycle</a>
+    <a href="#s8"><span class="num">8</span>Bidding Journey</a>
+    <a href="#s9"><span class="num">9</span>Account Management</a>
+
+    <div class="sidebar-section">Reference</div>
+    <a href="#s10"><span class="num">10</span>Architecture</a>
+    <a href="#s11"><span class="num">11</span>State Reference</a>
+    <a href="#api"><span class="num">#</span>API Endpoints</a>
+  </nav>
+
+  <!-- ═══════ MAIN ═══════ -->
+  <main class="main">
+    <div class="container">
+
+      <!-- ═══════ HERO ═══════ -->
+      <div class="hero">
+        <h1>Complete User Journey Map</h1>
+        <p class="subtitle">Every feature, screen, API endpoint, business rule, and state transition — visualized as interactive journey flows.</p>
+        <div class="meta">
+          <span class="badge"><span class="dot"></span>Ruby / Sinatra</span>
+          <span class="badge">MongoDB</span>
+          <span class="badge">Vue.js 3</span>
+          <span class="badge">MinIO S3</span>
+          <span class="badge">Hexagonal Architecture</span>
+        </div>
+      </div>
+
+      <!-- ═══════ SECTION 1 ═══════ -->
+      <section id="s1">
+        <h2><span class="num">1</span>System Overview</h2>
+
+        <h3>1.1 Actor Types</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Actor</th>
+              <th>Role</th>
+              <th>What They Can Do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Guest</strong></td>
+              <td><span class="badge badge-info">unauthenticated</span></td>
+              <td>Browse catalog, check email availability, sign up, log in, reset password</td>
+            </tr>
+            <tr>
+              <td><strong>Buyer</strong></td>
+              <td><span class="badge badge-success">role: buyer</span></td>
+              <td>Everything guest + bid on live auctions, save shipping address, upgrade to seller</td>
+            </tr>
+            <tr>
+              <td><strong>Seller</strong></td>
+              <td><span class="badge badge-purple">role: seller</span></td>
+              <td>Everything buyer + create/edit/start/stop auctions, manage listings</td>
+            </tr>
+            <tr>
+              <td><strong>Admin</strong></td>
+              <td><span class="badge badge-danger">role: admin</span></td>
+              <td>View closed auctions, manage settlements, approve/reject seller applications</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>1.2 Onboarding Flow</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    G["🙂 Guest"] --> S["📝 Signup"]
+    S --> VE["📧 Verify Email<br/>6-digit token"]
+    VE --> SA["📦 Shipping Address"]
+    SA --> B["✅ Buyer<br/>role: buyer, step: done"]
+    B -->|"Upgrade"| BS["🔄 Become Seller"]
+    BS --> CS["📊 Credit Scoring"]
+    CS -->|"Score: 300-850"| SL["✅ Seller<br/>role: seller, step: done"]
+
+    style G fill:#1e2740,stroke:#5b8def,color:#fff
+    style B fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style SL fill:#a78bfa22,stroke:#a78bfa,color:#a78bfa
+    style S fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style VE fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style SA fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style BS fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style CS fill:#111420,stroke:#2a3550,color:#c9d1e3
+        </div>
+        </div>
+        <h3>1.3 Auction Lifecycle</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    D["📝 DRAFT<br/>Seller creates"]
+    L["🔴 LIVE<br/>Bidding open"]
+    E["⏹️ ENDED<br/>Bidding closed"]
+    C["✅ COMPLETED<br/>Funds released"]
+
+    D -->|"Seller: Start"| L
+    L -->|"Seller: Stop"| E
+    E -->|"Admin: Complete<br/>Settlement"| C
+
+    D -.->|"Seller: Edit"| D
+    L -.->|"Any signed-in:<br/>Place Bid"| L
+    E -.->|"Admin: View<br/>Invoice Winner"| E
+
+    style D fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style L fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style E fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style C fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>1.4 Settlement Lifecycle</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    E["⏹️ ENDED<br/>Auction with winner"]
+    I["📄 INVOICED"]
+    P["💰 PAID"]
+    SH["📦 SHIPPED"]
+    CO["✅ COMPLETED"]
+
+    E -->|"Admin: Invoice<br/>Winner"| I
+    I -->|"Admin: Record<br/>Payment"| P
+    P -->|"Admin: Record<br/>Shipment"| SH
+    SH -->|"Admin: Release<br/>Funds"| CO
+
+    style E fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style I fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style P fill:#5b8def22,stroke:#5b8def,color:#5b8def
+    style SH fill:#a78bfa22,stroke:#a78bfa,color:#a78bfa
+    style CO fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>      </section>
+
+      <!-- ═══════ SECTION 2 ═══════ -->
+      <section id="s2">
+        <h2><span class="num">2</span>Guest Journey</h2>
+
+        <h3>2.1 Landing on Storefront</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    V["Visitor opens<br/>/ or /browse"] --> C["Public Catalog<br/>All auctions<br/>newest-first"]
+    C -->|"Click card"| D["Detail View<br/>Images + description<br/>+ bid history"]
+    D -->|"Wants to bid"| L["Login Screen<br/>/app"]
+
+    style V fill:#1e2740,stroke:#5b8def,color:#fff
+    style C fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style D fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style L fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>2.2 Signup Flow</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">Navigate to /app</div>
+              <div class="step-desc">Guest sees Signup Screen (Step 1 of 3). Form: Name, Email, Password (min 8 chars).</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">POST /api/signup</div>
+              <div class="step-desc">Backend validates email format, password length, name presence, and email uniqueness. Creates user with <code>role: "buyer"</code>, <code>step: "verify_email"</code>, bcrypt hash, UUID ID.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <div class="step-title">Token notification</div>
+              <div class="step-desc">6-digit token generated (15-min TTL). Logged to stdout via <code>StdoutNotifier</code>. Session cookie established. Event: <code>UserSignedUp</code>.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <div class="step-title">Auto-advance</div>
+              <div class="step-desc">Frontend shows Verify Email Screen (Step 2 of 3). User must enter the 6-digit code from logs.</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>2.3 Login Flow</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    G["Guest at /app"] --> L["Login Screen<br/>Email + Password"]
+    L -->|"POST /api/login"| V["Backend validates"]
+    V -->|"Success"| F["Fetch /api/me"]
+    F -->|"step: verify_email"| VE["Verify Email Screen"]
+    F -->|"step: shipping_address"| SA["Shipping Address Screen"]
+    F -->|"step: done"| DB["Dashboard"]
+    F -->|"role: admin"| AD["Admin Console<br/>/admin"]
+    V -->|"Fail"| LF["Generic error:<br/>invalid email or password"]
+
+    style G fill:#1e2740,stroke:#5b8def,color:#fff
+    style L fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style V fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style F fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style VE fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style SA fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style DB fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style AD fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style LF fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+        </div>
+        </div>
+        <h3>2.4 Password Reset</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    L["Login Screen"] -->|"Forgot password?"| F["Forgot Screen<br/>Enter email"]
+    F -->|"POST /api/password/forgot"| B["Backend:<br/>validates format<br/>finds user<br/>generates token<br/>1-hour TTL"]
+    B -->|"200 OK<br/>no leakage"| R["Reset Screen<br/>Token + New Password"]
+    R -->|"POST /api/password/reset"| V["Validate token<br/>not expired<br/>hash new password"]
+    V -->|"Success"| S["Login Screen<br/>Password updated"]
+
+    style L fill:#1e2740,stroke:#5b8def,color:#fff
+    style F fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style B fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style R fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style V fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style S fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>      </section>
+
+      <!-- ═══════ SECTION 3 ═══════ -->
+      <section id="s3">
+        <h2><span class="num">3</span>Buyer Journey</h2>
+
+        <h3>3.1 Buyer Onboarding</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    S["Step 1: Signup<br/>POST /api/signup"] --> VE["Step 2: Verify Email<br/>POST /api/onboarding/verify-email"]
+    VE -->|"Resend"| VE2["POST /api/onboarding/resend-token<br/>New 6-digit token"]
+    VE2 --> VE
+    VE --> SA["Step 3: Shipping Address<br/>POST /api/onboarding/shipping-address"]
+    SA -->|"Fields"| SA2["line1, line2?, city<br/>region, postal_code, country"]
+    SA2 --> B["✅ Buyer Done<br/>role: buyer, step: done"]
+
+    style S fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style VE fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style VE2 fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style SA fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style SA2 fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style B fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>3.2 Browse & Bid</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    B["Buyer at Dashboard"] -->|"Browse"| C["Public Catalog /browse"]
+    C -->|"Click card"| D["Detail View"]
+    D -->|"Live auction"| BI["Bidding Interface"]
+    BI -->|"Enter amount"| P["Place Bid"]
+    P -->|"POST /api/products/:id/bid"| V["Backend validates"]
+    V -->|"Valid"| W["Bid recorded<br/>Product updated<br/>History refreshed"]
+    V -->|"Invalid"| E["422 error<br/>status/bidder/amount"]
+
+    style B fill:#1e2740,stroke:#5b8def,color:#fff
+    style C fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style D fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style BI fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style P fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style V fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style W fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style E fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+        </div>
+        </div>
+        <h3>3.3 Bid Rules</h3>
+        <div class="card">
+          <div class="card-title">
+            <span class="icon" style="background:#ff6b6b22;color:#ff6b6b">⚡</span>
+            Validation Rules
+          </div>
+          <ul>
+            <li><strong>Who can bid:</strong> Any signed-in user (not the seller)</li>
+            <li><strong>When:</strong> Auction is <code>live</code> AND before <code>ends_at</code></li>
+            <li><strong>First bid:</strong> Must be &ge; <code>starting_price_cents</code></li>
+            <li><strong>Subsequent bids:</strong> Must <em>strictly exceed</em> <code>current_bid_cents</code></li>
+            <li><strong>Amount:</strong> Positive integer (cents)</li>
+            <li><strong>Denormalization:</strong> <code>current_bid_cents</code>, <code>highest_bidder_id</code>, <code>bid_count</code> stored on product</li>
+            <li><strong>Audit:</strong> Full bid history in <code>bids</code> collection (newest-first)</li>
+          </ul>
+        </div>
+
+        <h3>3.4 Credit Scoring</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    B["Buyer Done"] -->|"Become a Seller"| BS["POST /api/onboarding/become-seller<br/>step: credit_scoring"]
+    BS --> CS["Credit Scoring Screen"]
+    CS -->|"Submit"| C["POST /api/onboarding/credit-score"]
+    C -->|"Inputs"| I["income, employment<br/>debt, history_years"]
+    I -->|"Formula"| F["Base 500<br/>+ income/1000 (cap +150)<br/>+ employment bonus<br/>+ history*5 (cap +75)<br/>- DTI penalty<br/>Clamp [300, 850]"]
+    F -->|"Score"| S["✅ Seller<br/>role: seller, step: done"]
+
+    style B fill:#1e2740,stroke:#5b8def,color:#fff
+    style BS fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style CS fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style C fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style I fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style F fill:#a78bfa22,stroke:#a78bfa,color:#a78bfa
+    style S fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>      </section>
+
+      <!-- ═══════ SECTION 4 ═══════ -->
+      <section id="s4">
+        <h2><span class="num">4</span>Seller Journey</h2>
+
+        <h3>4.1 Seller Dashboard</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    S["Seller Dashboard"] --> L["+ Sell Product"]
+    S --> M["My Auctions"]
+    M --> D["Draft"]
+    M --> LI["Live"]
+    M --> E["Ended"]
+    M --> C["Completed"]
+    D -->|"Start"| LI
+    D -->|"Edit"| D
+    LI -->|"Stop"| E
+    E -->|"View outcome"| E
+    C -->|"Read-only"| C
+
+    style S fill:#1e2740,stroke:#5b8def,color:#fff
+    style L fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style M fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style D fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style LI fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style E fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style C fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>4.2 Create Listing (2-Step Wizard)</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">Step 1: Product Details</div>
+              <div class="step-desc">Title (max 120 chars), Description, Category (electronics, collectibles, fashion, home, toys, other), Photos (up to 3, multipart upload to MinIO). <code>POST /api/products/images</code> validates type (jpeg/png/webp/gif) and size (&le; 5MB).</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">Step 2: Auction Terms</div>
+              <div class="step-desc">Starting price (USD, min $0.01), Duration (days, 1&ndash;30). <code>POST /api/products</code> creates listing with <code>status: "draft"</code>.</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>4.3 Auction State Machine</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    D["📝 DRAFT<br/><small>Editable by owner<br/>Visible on browse<br/>No bidding allowed</small>"]
+    L["🔴 LIVE<br/><small>Locked from edits<br/>Bidding open<br/>ends_at is informational</small>"]
+    E["⏹️ ENDED<br/><small>Bidding closed<br/>Outcome visible<br/>Awaiting settlement</small>"]
+    C["✅ COMPLETED<br/><small>Funds released<br/>Auction closed<br/>Read-only</small>"]
+
+    D -->|"Seller clicks 'Start'"| L
+    D -->|"Seller edits"| D
+    L -->|"Seller clicks 'Stop'"| E
+    L -->|"Users place bids"| L
+    E -->|"Admin completes settlement"| C
+
+    style D fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style L fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style E fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style C fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>4.4 Edit & Start/Stop</h3>
+        <table>
+          <thead>
+            <tr><th>Action</th><th>Endpoint</th><th>Guards</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-info">Edit</span></td>
+              <td><code>PUT /api/products/:id</code></td>
+              <td>Must be seller, must own product, must be <code>draft</code></td>
+              <td>Updated product</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">Start</span></td>
+              <td><code>POST /api/products/:id/start</code></td>
+              <td>Must be seller, must own product, must be <code>draft</code></td>
+              <td><code>status: "live"</code>, <code>started_at</code>, <code>ends_at</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">Stop</span></td>
+              <td><code>POST /api/products/:id/stop</code></td>
+              <td>Must be seller, must own product, must be <code>live</code></td>
+              <td><code>status: "ended"</code>, <code>ended_at</code>, bidding closed</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ═══════ SECTION 5 ═══════ -->
+      <section id="s5">
+        <h2><span class="num">5</span>Admin Journey</h2>
+
+        <h3>5.1 Admin Account Creation</h3>
+        <div class="card">
+          <div class="card-title">
+            <span class="icon" style="background:#ff6b6b22;color:#ff6b6b">🔒</span>
+            Out-of-Band Creation
+          </div>
+          <p>Admin accounts are <strong>never</strong> created via signup. Use the CLI:</p>
+          <pre><code>ADMIN_EMAIL=ops@basic4.test ADMIN_PASSWORD=supersecret bin/create_admin</code></pre>
+          <p>Idempotent — re-running with existing email promotes that user to admin.</p>
+        </div>
+
+        <h3>5.2 Admin Console — 3 Tabs</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    A["Admin Console /admin"] --> T1["Closed Auctions<br/>GET /api/admin/auctions"]
+    A --> T2["Settlements<br/>GET /api/admin/settlements"]
+    A --> T3["Seller Applications<br/>GET /api/admin/seller-applications"]
+    T1 -->|"View and settle"| D["Detail View<br/>GET /api/admin/auctions/:id"]
+    T2 -->|"Action button"| A2["Advance settlement"]
+    T3 -->|"Approve"| AP["POST /api/admin/seller-applications/:id/approve"]
+    T3 -->|"Reject"| RJ["POST /api/admin/seller-applications/:id/reject"]
+
+    style A fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style T1 fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style T2 fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style T3 fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style D fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style A2 fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style AP fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style RJ fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+        </div>
+        </div>
+        <h3>5.3 Admin Detail View</h3>
+        <div class="card">
+          <div class="card-title">
+            <span class="icon" style="background:#a78bfa22;color:#a78bfa">👁️</span>
+            Full Party Visibility (PII)
+          </div>
+          <ul>
+            <li><strong>Product:</strong> Full info, images, final price, bid count</li>
+            <li><strong>Seller:</strong> Real name, email</li>
+            <li><strong>Winner:</strong> Real name, email, <strong>shipping address</strong></li>
+            <li><strong>Settlement:</strong> Progress bar + action buttons</li>
+            <li><strong>Bid history:</strong> Full list, newest-first</li>
+          </ul>
+        </div>
+
+        <h3>5.4 Settlement Actions</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    I["📄 INVOICED<br/><small>Amount + shipping address<br/>snapshotted (immutable)</small>"]
+    P["💰 PAID<br/><small>Payment received<br/>from winner</small>"]
+    SH["📦 SHIPPED<br/><small>Item shipped<br/>by seller</small>"]
+    CO["✅ COMPLETED<br/><small>Funds released<br/>Also marks auction<br/>status: completed</small>"]
+
+    I -->|"POST .../payment"| P
+    P -->|"POST .../shipment"| SH
+    SH -->|"POST .../complete"| CO
+
+    style I fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style P fill:#5b8def22,stroke:#5b8def,color:#5b8def
+    style SH fill:#a78bfa22,stroke:#a78bfa,color:#a78bfa
+    style CO fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>      </section>
+
+      <!-- ═══════ SECTION 6 ═══════ -->
+      <section id="s6">
+        <h2><span class="num">6</span>Auction Lifecycle</h2>
+
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    D["📝 DRAFT<br/><small>status: draft<br/>created_at<br/>editable<br/>no bidding</small>"]
+    L["🔴 LIVE<br/><small>status: live<br/>started_at, ends_at<br/>locked<br/>bidding open</small>"]
+    E["⏹️ ENDED<br/><small>status: ended<br/>ended_at<br/>bidding closed<br/>outcome visible<br/>settlement ready</small>"]
+    C["✅ COMPLETED<br/><small>status: completed<br/>funds released<br/>read-only</small>"]
+
+    D -->|"Seller Start"| L
+    L -->|"Seller Stop"| E
+    E -->|"Admin Complete"| C
+
+    D -.->|"Edit (owner only)"| D
+    L -.->|"Bid (any signed-in)"| L
+    E -.->|"View / Invoice"| E
+    C -.->|"View only"| C
+
+    style D fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style L fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style E fill:#ff6b6b22,stroke:#ff6b6b,color:#ff6b6b
+    style C fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>6.1 State Rules</h3>
+        <table>
+          <thead>
+            <tr><th>State</th><th>Who Can Edit</th><th>Bidding</th><th>Admin Visible</th><th>Public Visible</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="badge badge-warning">draft</span></td><td>Seller only</td><td>No</td><td>No</td><td>Yes (tagged)</td></tr>
+            <tr><td><span class="badge badge-danger">live</span></td><td>No one</td><td>Yes</td><td>No</td><td>Yes (tagged)</td></tr>
+            <tr><td><span class="badge badge-danger">ended</span></td><td>No one</td><td>No</td><td>Yes</td><td>Yes (tagged)</td></tr>
+            <tr><td><span class="badge badge-success">completed</span></td><td>No one</td><td>No</td><td>Yes</td><td>Yes (tagged)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>6.2 Transitions</h3>
+        <table>
+          <thead>
+            <tr><th>From</th><th>To</th><th>Trigger</th><th>Guard</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="badge badge-warning">draft</span></td><td><span class="badge badge-danger">live</span></td><td>Seller clicks "Start"</td><td>Must be seller, own product, draft</td></tr>
+            <tr><td><span class="badge badge-danger">live</span></td><td><span class="badge badge-danger">ended</span></td><td>Seller clicks "Stop"</td><td>Must be seller, own product, live</td></tr>
+            <tr><td><span class="badge badge-danger">ended</span></td><td><span class="badge badge-success">completed</span></td><td>Admin completes settlement</td><td>Must be ended, settlement shipped</td></tr>
+          </tbody>
+        </table>
+
+        <h3>6.3 Time Fields</h3>
+        <div class="state-grid">
+          <div class="state-card">
+            <div class="state-label">created_at</div>
+            <div class="state-value">When listing was created</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">started_at</div>
+            <div class="state-value">When auction went live</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">ends_at</div>
+            <div class="state-value">Informational deadline<br/>(started_at + duration)</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">ended_at</div>
+            <div class="state-value">When auction was manually stopped</div>
+          </div>
+        </div>
+        <p style="margin-top:12px"><strong>Note:</strong> No automatic closing at <code>ends_at</code>. Seller must manually stop.</p>
+      </section>
+
+      <!-- ═══════ SECTION 7 ═══════ -->
+      <section id="s7">
+        <h2><span class="num">7</span>Settlement Lifecycle</h2>
+
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart LR
+    I["📄 INVOICED<br/><small>Snapshots amount +<br/>shipping address from<br/>winner at invoice time<br/>(immutable)</small>"]
+    P["💰 PAID<br/><small>Payment received<br/>from buyer</small>"]
+    SH["📦 SHIPPED<br/><small>Item shipped<br/>by seller</small>"]
+    CO["✅ COMPLETED<br/><small>Funds released<br/>Also marks the<br/>underlying auction<br/>as completed</small>"]
+
+    I -->|"Invoice Winner"| P
+    P -->|"Record Payment"| SH
+    SH -->|"Record Shipment"| CO
+    SH -->|"Release Funds"| CO
+
+    style I fill:#f0c04022,stroke:#f0c040,color:#f0c040
+    style P fill:#5b8def22,stroke:#5b8def,color:#5b8def
+    style SH fill:#a78bfa22,stroke:#a78bfa,color:#a78bfa
+    style CO fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>7.1 Settlement Guards</h3>
+        <table>
+          <thead>
+            <tr><th>Action</th><th>Endpoint</th><th>Required Status</th><th>Error</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-info">Invoice</span></td>
+              <td><code>POST /api/admin/products/:id/settlement</code></td>
+              <td><code>ended</code> + has winner</td>
+              <td>422 <code>status</code> or <code>winner</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">Payment</span></td>
+              <td><code>POST /api/admin/settlements/:id/payment</code></td>
+              <td><code>invoiced</code></td>
+              <td>422 <code>status</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-purple">Shipment</span></td>
+              <td><code>POST /api/admin/settlements/:id/shipment</code></td>
+              <td><code>paid</code></td>
+              <td>422 <code>status</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">Complete</span></td>
+              <td><code>POST /api/admin/settlements/:id/complete</code></td>
+              <td><code>shipped</code></td>
+              <td>422 <code>status</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>7.2 Settlement Data</h3>
+        <div class="state-grid">
+          <div class="state-card">
+            <div class="state-label">amount_cents</div>
+            <div class="state-value">Final bid amount (snapshot)</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">shipping_address</div>
+            <div class="state-value">Winner's address at invoice time</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">seller_id / buyer_id</div>
+            <div class="state-value">Parties recorded for audit</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">invoiced_at</div>
+            <div class="state-value">paid_at, shipped_at, completed_at</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ SECTION 8 ═══════ -->
+      <section id="s8">
+        <h2><span class="num">8</span>Bidding Journey</h2>
+
+        <h3>8.1 Bid Flow</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+sequenceDiagram
+    actor B as Buyer
+    participant F as Frontend
+    participant API as Backend
+    participant P as Product
+    participant BR as BidRepo
+
+    B->>F: Enter bid amount
+    F->>API: POST /api/products/:id/bid<br/>{ amount_cents }
+    API->>API: Validate session
+    API->>P: Find product
+    P->>P: place_bid(bidder_id, amount, now)
+    Note over P: Guard: live?<br/>Guard: not own?<br/>Guard: amount valid?
+    P-->>API: Result{Product}
+    API->>API: If success: store product
+    API->>BR: Record bid (snapshot bidder_name)
+    API-->>F: { product: updated }
+    F->>F: Refresh detail + history
+    F-->>B: Show updated bid
+        </div>
+        </div>
+        <h3>8.2 Bid History Display</h3>
+        <div class="card">
+          <div class="card-title">
+            <span class="icon" style="background:#5b8def22;color:#5b8def">📋</span>
+            History Rules
+          </div>
+          <ul>
+            <li><strong>Sorted:</strong> Newest-first (by <code>created_at DESC</code>)</li>
+            <li><strong>Own bids:</strong> Shown as "You" with <code>mine: true</code> flag</li>
+            <li><strong>Others:</strong> Bidder's name at bid time (snapshot, not live)</li>
+            <li><strong>Displayed on:</strong> Public detail (<code>/browse</code>) and admin detail (<code>/admin</code>)</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══════ SECTION 9 ═══════ -->
+      <section id="s9">
+        <h2><span class="num">9</span>Account Management Journey</h2>
+
+        <h3>9.1 Profile Edit</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    U["Dashboard"] -->|"Edit profile"| E["Edit Profile Screen"]
+    E -->|"PATCH /api/profile"| P["Backend"]
+    P -->|"Change name"| N["Update name"]
+    P -->|"Change password"| PW["Validate current<br/>Hash new password"]
+    P -->|"Change email"| EM["Validate current<br/>New token<br/>Reset step: verify_email"]
+    N --> S["✅ Saved"]
+    PW --> S
+    EM --> S
+    S -->|"If email changed"| VE["Verify Email Screen"]
+    S -->|"Otherwise"| DB["Dashboard"]
+
+    style U fill:#1e2740,stroke:#5b8def,color:#fff
+    style E fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style P fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style N fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style PW fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style EM fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style S fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+    style VE fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style DB fill:#00d4aa22,stroke:#00d4aa,color:#00d4aa
+        </div>
+        </div>
+        <h3>9.2 Session & Signout</h3>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">Session Persistence</div>
+              <div class="step-desc">On page load (<code>/app</code> or <code>/admin</code>), frontend calls <code>GET /api/me</code>. If valid: auto-restores state. If invalid: shows Login Screen. Event: <code>SessionResumed</code>.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">Signout</div>
+              <div class="step-desc">Click "Sign out" → <code>POST /api/signout</code> → backend clears session → frontend resets to Login Screen. Event: <code>UserSignedOut</code>.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ SECTION 10 ═══════ -->
+      <section id="s10">
+        <h2><span class="num">10</span>Technical Architecture</h2>
+
+        <h3>10.1 Bounded Contexts</h3>
+        <div class="mermaid-wrapper"><div class="mermaid">
+flowchart TD
+    subgraph SK [Shared Kernel]
+        U["User Aggregate"]
+        P["Product Aggregate"]
+        B["Bid Aggregate"]
+        S["Settlement Aggregate"]
+        R["Result Pattern"]
+        PORT["Ports and Adapters"]
+    end
+
+    subgraph C1 [CheckExisting]
+        CE["CheckEmail"]
+    end
+
+    subgraph C2 [Register]
+        RE["RegisterUser"]
+    end
+
+    subgraph C3 [VerifyToken]
+        VE["VerifyEmailToken"]
+        VR["ResendEmailToken"]
+    end
+
+    subgraph C4 [BuyerOnboarding]
+        SA["SaveShippingAddress"]
+    end
+
+    subgraph C5 [CreditScoring]
+        SC["Domain Scoring"]
+        CS["ComputeCreditScore"]
+        SA2["StartSellerApplication"]
+        AP["ApproveSeller"]
+        RJ["RejectSeller"]
+    end
+
+    subgraph C6 [Identity]
+        AU["AuthenticateUser"]
+        UP["UpdateProfile"]
+        PR["RequestPasswordReset"]
+        PW["ResetPassword"]
+    end
+
+    subgraph C7 [ProductAuction]
+        LP["ListProduct"]
+        UP2["UpdateAuction"]
+        ST["StartAuction"]
+        SP["StopAuction"]
+        PL["PlaceBid"]
+        SH["ShowAuction"]
+        UI["UploadImage"]
+    end
+
+    subgraph C8 [Settlement]
+        IW["InvoiceWinner"]
+        RP["RecordPayment"]
+        RS["RecordShipment"]
+        CO["CompleteSettlement"]
+        AD["AdminAuctionDetail"]
+        LQ["ListSettlementQueue"]
+    end
+
+    C1 --> SK
+    C2 --> SK
+    C3 --> SK
+    C4 --> SK
+    C5 --> SK
+    C6 --> SK
+    C7 --> SK
+    C8 --> SK
+
+    style SK fill:#1e2740,stroke:#5b8def,color:#fff
+    style U fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style P fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style B fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style S fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style R fill:#111420,stroke:#2a3550,color:#c9d1e3
+    style PORT fill:#111420,stroke:#2a3550,color:#c9d1e3
+        </div>
+        </div>
+        <h3>10.2 Data Storage</h3>
+        <table>
+          <thead>
+            <tr><th>Collection</th><th>Indexes</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>users</code></td><td><code>email: 1</code> (unique)</td><td>User aggregate + onboarding state</td></tr>
+            <tr><td><code>products</code></td><td><code>seller_id: 1</code></td><td>Product / auction listings</td></tr>
+            <tr><td><code>bids</code></td><td><code>product_id: 1, created_at: -1</code></td><td>Bid history audit trail</td></tr>
+            <tr><td><code>settlements</code></td><td><code>product_id: 1</code> (unique)</td><td>Post-auction order state</td></tr>
+          </tbody>
+        </table>
+
+        <h3>10.3 Frontend Stack</h3>
+        <div class="card">
+          <div class="card-title">
+            <span class="icon" style="background:#00d4aa22;color:#00d4aa">⚡</span>
+            Vue 3 SPA Architecture
+          </div>
+          <ul>
+            <li><strong>Framework:</strong> Vue 3 Composition API via CDN</li>
+            <li><strong>Modules:</strong> Native ES modules (no build step)</li>
+            <li><strong>State:</strong> Reactive singleton (<code>store.js</code>)</li>
+            <li><strong>Events:</strong> Tiny pub/sub bus (<code>events.js</code>) with <code>on()</code> / <code>emit()</code></li>
+            <li><strong>API:</strong> <code>api.js</code> (JSON) + <code>apiUpload.js</code> (multipart)</li>
+            <li><strong>Components:</strong> One screen per file, route-based rendering</li>
+            <li><strong>Subscriber:</strong> <code>console-logger.js</code> logs all events</li>
+          </ul>
+        </div>
+
+        <h3 id="api">10.4 API Endpoints</h3>
+
+        <h4>Auth & Onboarding</h4>
+        <div class="card">
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/check-existing</span> <span class="desc">Check email availability</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/signup</span> <span class="desc">Create account</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/login</span> <span class="desc">Authenticate</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/signout</span> <span class="desc">End session</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/me</span> <span class="desc">Current user</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/onboarding/verify-email</span> <span class="desc">Verify email token</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/onboarding/resend-token</span> <span class="desc">Resend verification token</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/onboarding/shipping-address</span> <span class="desc">Save shipping address</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/onboarding/become-seller</span> <span class="desc">Start seller upgrade</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/onboarding/credit-score</span> <span class="desc">Submit credit score</span></div>
+        </div>
+
+        <h4>Products & Auctions</h4>
+        <div class="card">
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/products</span> <span class="desc">Browse all auctions</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/products/:id</span> <span class="desc">Auction detail + bid history</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/products/:id/bid</span> <span class="desc">Place bid</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/products</span> <span class="desc">Create listing</span></div>
+          <div class="api-endpoint"><span class="method method-put">PUT</span> <span class="path">/api/products/:id</span> <span class="desc">Edit draft listing</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/products/:id/start</span> <span class="desc">Start auction</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/products/:id/stop</span> <span class="desc">Stop auction</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/products/images</span> <span class="desc">Upload image</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/products/mine</span> <span class="desc">My auctions</span></div>
+        </div>
+
+        <h4>Admin</h4>
+        <div class="card">
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/admin/auctions</span> <span class="desc">Closed auctions list</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/admin/auctions/:id</span> <span class="desc">Admin detail view</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/admin/settlements</span> <span class="desc">Settlement queue</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/admin/products/:id/settlement</span> <span class="desc">Invoice winner</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/admin/settlements/:id/payment</span> <span class="desc">Record payment</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/admin/settlements/:id/shipment</span> <span class="desc">Record shipment</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/admin/settlements/:id/complete</span> <span class="desc">Complete settlement</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/admin/seller-applications</span> <span class="desc">Pending sellers</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/admin/seller-applications/:id/approve</span> <span class="desc">Approve seller</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/admin/seller-applications/:id/reject</span> <span class="desc">Reject seller</span></div>
+        </div>
+
+        <h4>Account</h4>
+        <div class="card">
+          <div class="api-endpoint"><span class="method method-patch">PATCH</span> <span class="path">/api/profile</span> <span class="desc">Update profile</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/password/forgot</span> <span class="desc">Request password reset</span></div>
+          <div class="api-endpoint"><span class="method method-post">POST</span> <span class="path">/api/password/reset</span> <span class="desc">Reset password with token</span></div>
+          <div class="api-endpoint"><span class="method method-get">GET</span> <span class="path">/api/health</span> <span class="desc">Health check (DB + app)</span></div>
+        </div>
+
+        <h3>10.5 Frontend Events</h3>
+        <div class="event-list">
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">UserSignedUp</span><span class="event-desc">After signup</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">UserAuthenticated</span><span class="event-desc">After login</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">SessionResumed</span><span class="event-desc">After page load</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">UserSignedOut</span><span class="event-desc">After signout</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">EmailVerified</span><span class="event-desc">After verification</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">VerificationTokenResent</span><span class="event-desc">After resend</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">ShippingAddressSaved</span><span class="event-desc">After address</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">SellerApplicationStarted</span><span class="event-desc">After upgrade click</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">BecameSeller</span><span class="event-desc">After credit score</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">ProfileUpdated</span><span class="event-desc">After profile save</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">ProductListedForAuction</span><span class="event-desc">After create</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">AuctionUpdated</span><span class="event-desc">After edit</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">AuctionStarted</span><span class="event-desc">After start</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">AuctionStopped</span><span class="event-desc">After stop</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">PasswordResetRequested</span><span class="event-desc">After forgot</span></div>
+          <div class="event-item"><span class="event-dot"></span><span class="event-name">PasswordResetCompleted</span><span class="event-desc">After reset</span></div>
+        </div>
+      </section>
+
+      <!-- ═══════ SECTION 11 ═══════ -->
+      <section id="s11">
+        <h2><span class="num">11</span>Complete State Reference</h2>
+
+        <h3>11.1 User States</h3>
+        <table>
+          <thead>
+            <tr><th>role</th><th>step</th><th>Screen</th><th>Actions Available</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-success">buyer</span></td>
+              <td><code>verify_email</code></td>
+              <td>Verify Email</td>
+              <td>Resend token, verify</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">buyer</span></td>
+              <td><code>shipping_address</code></td>
+              <td>Shipping Address</td>
+              <td>Save address</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">buyer</span></td>
+              <td><code>done</code></td>
+              <td>Dashboard</td>
+              <td>Browse, bid, become seller, edit profile</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">buyer</span></td>
+              <td><code>credit_scoring</code></td>
+              <td>Credit Scoring</td>
+              <td>Submit credit score</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-purple">seller</span></td>
+              <td><code>done</code></td>
+              <td>Dashboard</td>
+              <td>Browse, bid, create auctions, manage listings, edit profile</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">admin</span></td>
+              <td><code>done</code></td>
+              <td>Admin Console</td>
+              <td>View closed auctions, manage settlements, approve sellers</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>11.2 Product States</h3>
+        <table>
+          <thead>
+            <tr><th>Status</th><th>Description</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-warning">draft</span></td>
+              <td>Created, editable, not yet visible for bidding</td>
+              <td>Edit, Start</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">live</span></td>
+              <td>Active, bidding open, locked from edits</td>
+              <td>Stop, Bid</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">ended</span></td>
+              <td>Bidding closed, awaiting settlement</td>
+              <td>View, Invoice (admin)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">completed</span></td>
+              <td>Settlement finished, funds released</td>
+              <td>View (read-only)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>11.3 Settlement States</h3>
+        <table>
+          <thead>
+            <tr><th>Status</th><th>Description</th><th>Next Action</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-info">invoiced</span></td>
+              <td>Winner invoiced, awaiting payment</td>
+              <td>Record payment</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">paid</span></td>
+              <td>Payment received, awaiting shipment</td>
+              <td>Record shipment</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-purple">shipped</span></td>
+              <td>Item shipped, awaiting fund release</td>
+              <td>Complete settlement</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">completed</span></td>
+              <td>Funds released, order closed</td>
+              <td>None</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>11.4 Error Patterns</h3>
+        <div class="state-grid">
+          <div class="state-card">
+            <div class="state-label">401 Unauthorized</div>
+            <div class="state-value">Not signed in</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">403 Forbidden</div>
+            <div class="state-value">Wrong role (e.g., buyer trying to sell)</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">404 Not Found</div>
+            <div class="state-value">Missing resource (collapsed with ownership)</div>
+          </div>
+          <div class="state-card">
+            <div class="state-label">422 Unprocessable</div>
+            <div class="state-value">Validation / state guard failure</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="card" style="margin-top:60px;text-align:center">
+        <p style="color:var(--text-dim);font-size:13px">
+          <strong>Basic4</strong> — Auction & Escrow Platform<br/>
+          Ruby / Sinatra · MongoDB · Vue.js 3 · MinIO · Hexagonal Architecture
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ═══════ DIAGRAM MODAL ═══════ -->
+  <div class="diagram-modal" id="diagramModal">
+    <div class="modal-content" id="modalContent">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div id="modalDiagram"></div>
+    </div>
+    <div class="modal-controls">
+      <button class="modal-btn" id="zoomOut" title="Zoom Out">−</button>
+      <span class="zoom-level" id="zoomLevel">100%</span>
+      <button class="modal-btn" id="zoomIn" title="Zoom In">+</button>
+      <button class="modal-btn" id="zoomReset" title="Reset Zoom">⊙</button>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '16px',
+        primaryColor: '#111420',
+        primaryTextColor: '#c9d1e3',
+        primaryBorderColor: '#2a3550',
+        lineColor: '#4a5578',
+        secondaryColor: '#161b2a',
+        tertiaryColor: '#1e2740',
+        background: '#0b0e14',
+        mainBkg: '#111420',
+        secondBkg: '#161b2a',
+        nodeBorder: '#2a3550',
+        clusterBkg: '#111420',
+        clusterBorder: '#2a3550',
+        titleColor: '#c9d1e3',
+        edgeLabelBackground: '#0b0e14',
+        nodeTextColor: '#c9d1e3'
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'basis',
+        padding: 24,
+        nodeSpacing: 65,
+        rankSpacing: 80,
+        useMaxWidth: false
+      },
+      stateDiagram: {
+        padding: 24
+      },
+      sequence: {
+        actorMargin: 70,
+        diagramMarginX: 30,
+        diagramMarginY: 30,
+        boxMargin: 8,
+        boxTextMargin: 4,
+        noteMargin: 12,
+        messageMargin: 24,
+        mirrorActors: false,
+        bottomMarginAdj: 4,
+        useMaxWidth: true
+      }
+    });
+
+    // Active sidebar link
+    const sections = document.querySelectorAll('section[id]');
+    const links = document.querySelectorAll('.sidebar a');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          links.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+          });
+        }
+      });
+    }, { rootMargin: '-100px 0px -60% 0px' });
+
+    sections.forEach(s => observer.observe(s));
+    // ═══════ DIAGRAM MODAL INTERACTIONS ═══════
+    const modal = document.getElementById('diagramModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalDiagram = document.getElementById('modalDiagram');
+    const modalClose = document.getElementById('modalClose');
+    const zoomIn = document.getElementById('zoomIn');
+    const zoomOut = document.getElementById('zoomOut');
+    const zoomReset = document.getElementById('zoomReset');
+    const zoomLevel = document.getElementById('zoomLevel');
+
+    let currentZoom = 1;
+    const ZOOM_STEP = 0.2;
+    const ZOOM_MIN = 0.4;
+    const ZOOM_MAX = 3;
+
+    // Open modal when clicking a diagram wrapper
+    document.querySelectorAll('.mermaid-wrapper').forEach(wrapper => {
+      wrapper.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Clone the SVG
+        const svg = wrapper.querySelector('.mermaid svg');
+        if (!svg) return;
+
+        const svgClone = svg.cloneNode(true);
+        svgClone.style.maxWidth = 'none';
+        svgClone.style.transform = 'scale(1)';
+        svgClone.style.transformOrigin = 'center';
+        svgClone.style.transition = 'transform 0.2s';
+
+        // Clear and append
+        modalDiagram.innerHTML = '';
+        modalDiagram.appendChild(svgClone);
+
+        // Reset zoom
+        currentZoom = 1;
+        updateZoom();
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    // Close modal
+    function closeModal() {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      modalDiagram.innerHTML = '';
+      currentZoom = 1;
+    }
+
+    modalClose.addEventListener('click', closeModal);
+
+    // Close on click outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // Zoom functions
+    function updateZoom() {
+      const svg = modalDiagram.querySelector('svg');
+      if (svg) {
+        svg.style.transform = `scale(${currentZoom})`;
+        zoomLevel.textContent = `${Math.round(currentZoom * 100)}%`;
+      }
+    }
+
+    zoomIn.addEventListener('click', () => {
+      if (currentZoom < ZOOM_MAX) {
+        currentZoom = Math.min(currentZoom + ZOOM_STEP, ZOOM_MAX);
+        updateZoom();
+      }
+    });
+
+    zoomOut.addEventListener('click', () => {
+      if (currentZoom > ZOOM_MIN) {
+        currentZoom = Math.max(currentZoom - ZOOM_STEP, ZOOM_MIN);
+        updateZoom();
+      }
+    });
+
+    zoomReset.addEventListener('click', () => {
+      currentZoom = 1;
+      updateZoom();
+    });
+
+    // Keyboard zoom
+    document.addEventListener('keydown', (e) => {
+      if (!modal.classList.contains('active')) return;
+
+      if (e.key === '+' || e.key === '=') {
+        if (currentZoom < ZOOM_MAX) {
+          currentZoom = Math.min(currentZoom + ZOOM_STEP, ZOOM_MAX);
+          updateZoom();
+        }
+      } else if (e.key === '-' || e.key === '_') {
+        if (currentZoom > ZOOM_MIN) {
+          currentZoom = Math.max(currentZoom - ZOOM_STEP, ZOOM_MIN);
+          updateZoom();
+        }
+      } else if (e.key === '0') {
+        currentZoom = 1;
+        updateZoom();
+      }
+    });
+
+    // Mouse wheel zoom
+    modalContent.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      currentZoom = Math.max(ZOOM_MIN, Math.min(currentZoom + delta, ZOOM_MAX));
+      updateZoom();
+    });
+  </script>
+</body>
+</html>

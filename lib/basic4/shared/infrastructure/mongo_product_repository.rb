@@ -25,6 +25,19 @@ module Basic4::Infrastructure::MongoProductRepository
               .sort(ended_at: -1).map { |doc| hydrate(doc) }
   end
 
+  # Products awaiting admin approval. Oldest first (FIFO review queue).
+  def self.find_pending
+    Basic4::DB.products.find(status: "pending_approval")
+              .sort(created_at: 1).map { |doc| hydrate(doc) }
+  end
+
+  # Public catalog: everything except pending/rejected (which must be hidden
+  # from buyers until an admin has approved them).
+  def self.find_public
+    Basic4::DB.products.find(status: { "$nin" => %w[pending_approval rejected] })
+              .sort(created_at: -1).map { |doc| hydrate(doc) }
+  end
+
   def self.find_by_id(id)
     doc = Basic4::DB.products.find(_id: id).first
     doc && hydrate(doc)
@@ -52,6 +65,8 @@ module Basic4::Infrastructure::MongoProductRepository
       current_bid_cents:    doc["current_bid_cents"],
       bid_count:            doc["bid_count"] || 0,
       highest_bidder_id:    doc["highest_bidder_id"],
+      approved_at:          doc["approved_at"],
+      rejection_reason:     doc["rejection_reason"],
       created_at:           doc["created_at"],
       updated_at:           doc["updated_at"] || doc["created_at"]
     )
@@ -74,6 +89,8 @@ module Basic4::Infrastructure::MongoProductRepository
       "current_bid_cents"    => product.current_bid_cents,
       "bid_count"            => product.bid_count,
       "highest_bidder_id"    => product.highest_bidder_id,
+      "approved_at"          => product.approved_at,
+      "rejection_reason"     => product.rejection_reason,
       "created_at"           => product.created_at,
       "updated_at"           => product.updated_at
     }

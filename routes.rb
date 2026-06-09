@@ -288,6 +288,56 @@ module Basic4
       respond_with(result) { |u| json user: Present.call(u) }
     end
 
+    # ── admin: product approval workflow ────────────────────────────
+
+    # Queue: products awaiting admin approval (oldest first).
+    get "/api/admin/pending-products" do
+      require_admin!
+      products = Basic4::Admin::Application::ListPendingProducts.call
+      json products: products.map { |product| PresentProduct.call(product) }
+    end
+
+    # Admin approves a pending product: pending_approval -> draft.
+    post "/api/admin/products/:id/approve" do
+      require_admin!
+      result = Basic4::Admin::Application::ApproveProduct.call(
+        session[:user_id], params["id"]
+      )
+      respond_with(result) { |product| json product: PresentProduct.call(product) }
+    end
+
+    # Admin rejects a pending product with a reason.
+    post "/api/admin/products/:id/reject" do
+      require_admin!
+      body = json_body
+      result = Basic4::Admin::Application::RejectProduct.call(
+        session[:user_id], params["id"], reason: body["reason"]
+      )
+      respond_with(result) { |product| json product: PresentProduct.call(product) }
+    end
+
+    # ── notifications ────────────────────────────────────────────
+
+    get "/api/notifications" do
+      require_user!
+      result = Basic4::Identity::Application::ListNotifications.call(session[:user_id])
+      respond_with(result) { |v| json v }
+    end
+
+    patch "/api/notifications/:id/read" do
+      require_user!
+      result = Basic4::Identity::Application::MarkNotificationRead.call(
+        session[:user_id], params["id"]
+      )
+      respond_with(result) { |n| json notification: PresentNotification.call(n) }
+    end
+
+    get "/api/notifications/unread-count" do
+      require_user!
+      container = Basic4::Container.production
+      json unread_count: container[:notification_repository].unread_count(session[:user_id])
+    end
+
     # ── account management ────────────────────────────────────────
 
     patch "/api/profile" do

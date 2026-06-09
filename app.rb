@@ -17,8 +17,11 @@ require_relative "lib/basic4/shared/settlement_presenter"
 require_relative "lib/basic4/shared/ports/product_repository"
 require_relative "lib/basic4/shared/ports/bid_repository"
 require_relative "lib/basic4/shared/ports/settlement_repository"
+require_relative "lib/basic4/shared/ports/notification_repository"
 require_relative "lib/basic4/shared/ports/object_storage"
 require_relative "lib/basic4/shared/container"
+require_relative "lib/basic4/shared/notification"
+require_relative "lib/basic4/shared/notification_presenter"
 
 require_relative "lib/basic4/check_existing/application/inputs"
 require_relative "lib/basic4/check_existing/application/check_email"
@@ -44,6 +47,8 @@ require_relative "lib/basic4/identity/application/authenticate_user"
 require_relative "lib/basic4/identity/application/update_profile"
 require_relative "lib/basic4/identity/application/request_password_reset"
 require_relative "lib/basic4/identity/application/reset_password"
+require_relative "lib/basic4/identity/application/list_notifications"
+require_relative "lib/basic4/identity/application/mark_notification_read"
 
 require_relative "lib/basic4/product_auction/application/inputs"
 require_relative "lib/basic4/product_auction/application/list_product_for_auction"
@@ -64,6 +69,10 @@ require_relative "lib/basic4/settlement/application/complete_settlement"
 require_relative "lib/basic4/settlement/application/admin_auction_detail"
 require_relative "lib/basic4/settlement/application/list_settlement_queue"
 
+require_relative "lib/basic4/admin/application/list_pending_products"
+require_relative "lib/basic4/admin/application/approve_product"
+require_relative "lib/basic4/admin/application/reject_product"
+
 module Basic4
   class OnboardingApp < Sinatra::Base
     set :root, File.expand_path("..", __FILE__)
@@ -76,6 +85,7 @@ module Basic4
     PresentProduct = Basic4::ProductPresenter
     PresentBid = Basic4::BidPresenter
     PresentSettlement = Basic4::SettlementPresenter
+    PresentNotification = Basic4::NotificationPresenter
 
     configure :production, :development do
       begin

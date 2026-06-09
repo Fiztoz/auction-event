@@ -17,6 +17,13 @@ class TestSettlement < Minitest::Test
     complete_seller_onboarding!(email: seller, name: seller_name)
     post_json "/api/products", VALID
     id = JSON.parse(last_response.body).dig("product", "id")
+    # Approval workflow: admin must approve before the seller can start.
+    post "/api/signout"
+    create_admin!(email: "admin@example.com")
+    post_json "/api/login", email: "admin@example.com", password: "password1"
+    post_json "/api/admin/products/#{id}/approve"
+    post "/api/signout"
+    post_json "/api/login", email: seller, password: "password1"
     post_json "/api/products/#{id}/start"
     if bid
       complete_onboarding!(email: buyer, name: buyer_name)
@@ -56,6 +63,13 @@ class TestSettlement < Minitest::Test
     complete_seller_onboarding!
     post_json "/api/products", VALID
     id = JSON.parse(last_response.body).dig("product", "id")
+    # Approve first so the seller can start it.
+    post "/api/signout"
+    create_admin!(email: "admin@example.com")
+    post_json "/api/login", email: "admin@example.com", password: "password1"
+    post_json "/api/admin/products/#{id}/approve"
+    post "/api/signout"
+    post_json "/api/login", email: "ada@example.com", password: "password1"
     post_json "/api/products/#{id}/start" # live, not ended
     sign_in_admin!
     post_json "/api/admin/products/#{id}/settlement"

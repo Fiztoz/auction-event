@@ -16,7 +16,8 @@ class TestProductAuction < Minitest::Test
     assert_equal 201, last_response.status
     product = JSON.parse(last_response.body)["product"]
     refute_nil product["id"]
-    assert_equal "draft", product["status"]
+    # New workflow: products are NOT in draft immediately — they wait for admin approval.
+    assert_equal "pending_approval", product["status"]
     assert_equal 4500, product["starting_price_cents"]
 
     get "/api/products/mine"
@@ -94,6 +95,8 @@ class TestProductAuction < Minitest::Test
     product = JSON.parse(last_response.body)["product"]
     assert_equal "Updated lamp", product["title"]
     assert_equal 9900, product["starting_price_cents"]
+    # Stays in pending_approval after an edit (was "draft" before the approval workflow).
+    assert_equal "pending_approval", product["status"]
   end
 
   def test_cannot_edit_another_sellers_auction
@@ -120,9 +123,29 @@ class TestProductAuction < Minitest::Test
   # ── starting ────────────────────────────────────────────────────
 
   # Creates a draft auction as the current seller and returns its id.
+  # (After the approval workflow this means: list product, then have an
+  # admin approve it, so the product is in `draft` state. The helper
+  # leaves the original seller's session signed in.)
   def create_draft!
     post_json "/api/products", VALID
-    JSON.parse(last_response.body).dig("product", "id")
+    id = JSON.parse(last_response.body).dig("product", "id")
+    approve_as_admin!(id)
+    id
+  end
+
+  # Helper: signs in as admin, approves the given product, then signs the
+  # seller (tracked in @last_seller_email by complete_seller_onboarding!)
+  # back in. Falls back to "ada@example.com" for the rare case where the
+  # caller never went through complete_seller_onboarding!.
+  def approve_as_admin!(product_id, admin_email: "admin@example.com")
+    post "/api/signout"
+    create_admin!(email: admin_email)
+    post_json "/api/login", email: admin_email, password: "password1"
+    post_json "/api/admin/products/#{product_id}/approve"
+    post "/api/signout"
+    seller_email = @last_seller_email || "ada@example.com"
+    seller_password = @last_seller_password || "password1"
+    post_json "/api/login", email: seller_email, password: seller_password
   end
 
   def test_seller_starts_a_draft_auction

@@ -13,7 +13,18 @@ class TestAdmin < Minitest::Test
   def make_auction!(state, overrides = {})
     post_json "/api/products", PRODUCT.merge(overrides)
     id = JSON.parse(last_response.body).dig("product", "id")
-    post_json "/api/products/#{id}/start" if state == :live || state == :ended
+    if state == :live || state == :ended
+      # Approve as admin before the seller can start.
+      post "/api/signout"
+      create_admin!(email: "admin@example.com")
+      post_json "/api/login", email: "admin@example.com", password: "password1"
+      post_json "/api/admin/products/#{id}/approve"
+      post "/api/signout"
+      seller_email = @last_seller_email || "seller@example.com"
+      seller_password = @last_seller_password || "password1"
+      post_json "/api/login", email: seller_email, password: seller_password
+      post_json "/api/products/#{id}/start"
+    end
     post_json "/api/products/#{id}/stop"  if state == :ended
     id
   end

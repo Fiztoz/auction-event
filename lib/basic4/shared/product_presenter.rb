@@ -19,6 +19,8 @@ module Basic4::ProductPresenter
       current_bid_cents:    product.current_bid_cents,
       bid_count:            product.bid_count,
       highest_bidder_id:    product.highest_bidder_id,
+      approved_at:          product.approved_at,
+      rejection_reason:     product.rejection_reason,
       created_at:           product.created_at,
       updated_at:           product.updated_at
     }
