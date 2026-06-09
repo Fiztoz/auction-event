@@ -5,3 +5,6 @@
 /log/
 *.gem
 .env
+
+
+.DS_Store
