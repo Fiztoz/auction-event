@@ -6,6 +6,7 @@ require_relative "../shared"
 #   find_by_id(id)                       -> Basic4::User | nil
 #   find_by_email(email)                 -> Basic4::User | nil
 #   find_by_password_reset_token(token)  -> Basic4::User | nil
+#   find_pending_sellers                 -> Array<Basic4::User>  (step == "credit_scoring" with a credit score)
 #   store(user)                          -> nil  (raises DuplicateEmail on email-uniqueness conflict)
 module Basic4::Ports::UserRepository
   class DuplicateEmail < StandardError; end

@@ -3,13 +3,11 @@ import { currency } from "./format.js";
 
 const { createApp, ref, computed, onMounted } = Vue;
 
-// Back-office console. Two tabs:
-//   • Closed auctions — read-only catalogue of ended/completed listings.
-//   • Settlements     — the work queue: every closed auction with a winner, with
-//                       its current state and the next action the admin can take.
-// Opening any auction shows the parties (seller + winning buyer) and the full
-// settlement panel. The settlement runs: invoiced → paid → shipped → completed
-// (completing releases funds to the seller and marks the auction completed).
+// Back-office console. Three tabs:
+//   • Closed auctions      — read-only catalogue of ended/completed listings.
+//   • Settlements          — the work queue: every closed auction with a winner, with
+//                            its current state and the next action the admin can take.
+//   • Seller Applications  — buyers who submitted a credit score and await approval.
 const SETTLEMENT_STEPS = ["invoiced", "paid", "shipped", "completed"];
 
 // The next action for a settlement, given its current row. null once completed.
@@ -26,11 +24,12 @@ const App = {
   setup() {
     const products = ref([]);
     const queue = ref([]);
+    const applicants = ref([]);
     const me = ref(null);
     const loading = ref(true);
     const error = ref("");
 
-    const view = ref("list");      // 'list' | 'settlements' | 'detail'
+    const view = ref("list");      // 'list' | 'settlements' | 'applications' | 'detail'
     const selected = ref(null);
     const selectedBids = ref([]);
     const seller = ref(null);
@@ -39,9 +38,11 @@ const App = {
     const detailError = ref("");
     const acting = ref(false);
     const actionError = ref("");
+    const appError = ref("");
 
     const isAdmin = computed(() => me.value && me.value.role === "admin");
     const pendingCount = computed(() => queue.value.filter((r) => !r.settlement || r.settlement.status !== "completed").length);
+    const applicantCount = computed(() => applicants.value.length);
 
     const currentCents = (p) => p.current_bid_cents || p.starting_price_cents;
     const bidLabel = (p) => (p.bid_count > 0 ? `${p.bid_count} bid${p.bid_count === 1 ? "" : "s"}` : "No bids");
@@ -53,6 +54,7 @@ const App = {
 
     const loadProducts = async () => { products.value = (await api("/api/admin/auctions")).products; };
     const loadQueue = async () => { queue.value = (await api("/api/admin/settlements")).items; };
+    const loadApplicants = async () => { applicants.value = (await api("/api/admin/seller-applications")).applicants; };
 
     const loadDetail = async (id) => {
       const data = await api(`/api/admin/auctions/${id}`);
@@ -82,6 +84,26 @@ const App = {
 
     const showList = () => { view.value = "list"; };
     const showSettlements = async () => { view.value = "settlements"; try { await loadQueue(); } catch (e) { error.value = e.message; } };
+    const showApplications = async () => {
+      view.value = "applications";
+      appError.value = "";
+      try { await loadApplicants(); } catch (e) { appError.value = e.message; }
+    };
+
+    const approveApplicant = async (id) => {
+      acting.value = true;
+      appError.value = "";
+      try { await api(`/api/admin/seller-applications/${id}/approve`, { method: "POST" }); await loadApplicants(); }
+      catch (e) { appError.value = e.message; }
+      finally { acting.value = false; }
+    };
+    const rejectApplicant = async (id) => {
+      acting.value = true;
+      appError.value = "";
+      try { await api(`/api/admin/seller-applications/${id}/reject`, { method: "POST" }); await loadApplicants(); }
+      catch (e) { appError.value = e.message; }
+      finally { acting.value = false; }
+    };
 
     // POST a settlement action, then run the given refresh(es).
     const postAction = async (path, ...refreshers) => {
@@ -122,12 +144,13 @@ const App = {
     });
 
     return {
-      products, queue, me, loading, error, isAdmin, pendingCount, view,
-      selected, selectedBids, seller, winner, settlement, detailError, acting, actionError,
+      products, queue, applicants, me, loading, error, isAdmin, pendingCount, applicantCount, view,
+      selected, selectedBids, seller, winner, settlement, detailError, acting, actionError, appError,
       currency, currentCents, bidLabel, statusBadge, settlementState, addressLines,
       stepReached, nextActionFor, steps: SETTLEMENT_STEPS,
-      openDetail, showList, showSettlements, advanceRow,
-      invoiceWinner, recordPayment, recordShipment, completeOrder
+      openDetail, showList, showSettlements, showApplications, advanceRow,
+      invoiceWinner, recordPayment, recordShipment, completeOrder,
+      approveApplicant, rejectApplicant
     };
   },
   template: `
@@ -148,6 +171,10 @@ const App = {
           <button type="button" :class="{ active: view === 'settlements' }" @click="showSettlements">
             Settlements
             <span class="badge" v-if="pendingCount">{{ pendingCount }}</span>
+          </button>
+          <button type="button" :class="{ active: view === 'applications' }" @click="showApplications">
+            Seller Applications
+            <span class="badge" v-if="applicantCount">{{ applicantCount }}</span>
           </button>
         </div>
 
@@ -210,6 +237,32 @@ const App = {
                 </button>
                 <span class="sold" v-else>Completed ✓</span>
                 <a class="link-button" href="#" @click.prevent="openDetail(row.product)">Details →</a>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- SELLER APPLICATIONS -->
+        <template v-else-if="view === 'applications'">
+          <h1>Seller Applications</h1>
+          <p class="subtitle">Buyers who completed credit scoring and are awaiting approval.</p>
+
+          <div class="error" v-if="appError">{{ appError }}</div>
+          <div class="card" v-else-if="!applicants.length">No pending applications.</div>
+
+          <div class="settlement-queue" v-else>
+            <div class="settlement-row" v-for="a in applicants" :key="a.id">
+              <div class="settlement-row-main">
+                <span class="settlement-row-title">{{ a.name }}</span>
+                <span class="auction-meta">{{ a.email }}</span>
+                <span class="auction-meta" v-if="a.credit_score">
+                  Credit score: <strong>{{ a.credit_score.score }}</strong>
+                  &middot; submitted {{ new Date(a.credit_score.computed_at).toLocaleDateString() }}
+                </span>
+              </div>
+              <div class="settlement-row-action">
+                <button type="button" class="btn-approve" @click="approveApplicant(a.id)" :disabled="acting">Approve</button>
+                <button type="button" class="btn-reject"  @click="rejectApplicant(a.id)"  :disabled="acting">Reject</button>
               </div>
             </div>
           </div>

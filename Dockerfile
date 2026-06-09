@@ -14,7 +14,7 @@ RUN apt-get update -qq \
 
 WORKDIR /app
 
-COPY Gemfile Gemfile.lock ./
+COPY Gemfile ./
 RUN bundle install
 
 COPY . .

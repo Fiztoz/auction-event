@@ -21,6 +21,10 @@ module Basic4::Infrastructure::MongoUserRepository
     doc && hydrate(doc)
   end
 
+  def self.find_pending_sellers
+    Basic4::DB.users.find(step: "credit_scoring", "credit_score" => { "$ne" => nil }).to_a.map { |doc| hydrate(doc) }
+  end
+
   def self.store(user)
     Basic4::DB.users.find_one_and_replace({ _id: user.id }, serialize(user), upsert: true)
     nil

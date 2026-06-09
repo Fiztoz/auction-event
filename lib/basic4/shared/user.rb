@@ -143,10 +143,19 @@ class Basic4::User
     return Basic4::Result.failure(:step, "not at credit scoring step") unless step == "credit_scoring"
     Basic4::Result.success(with(
       credit_score: Basic4::CreditScoreSnapshot.new(score: score, inputs: inputs, computed_at: at),
-      role: "seller",
-      step: "done",
       updated_at: at
     ))
+  end
+
+  def approve_seller_application(at:)
+    return Basic4::Result.failure(:step, "not awaiting seller approval") unless step == "credit_scoring"
+    return Basic4::Result.failure(:credit_score, "no credit score on file") unless credit_score
+    Basic4::Result.success(with(role: "seller", step: "done", updated_at: at))
+  end
+
+  def reject_seller_application(at:)
+    return Basic4::Result.failure(:step, "not awaiting seller approval") unless step == "credit_scoring"
+    Basic4::Result.success(with(role: "buyer", step: "done", updated_at: at))
   end
 
   def change_name(new_name, at:)

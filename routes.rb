@@ -269,6 +269,25 @@ module Basic4
       respond_with(result) { |s| json settlement: PresentSettlement.call(s) }
     end
 
+    # Seller applications: buyers who completed credit scoring and await approval.
+    get "/api/admin/seller-applications" do
+      require_admin!
+      users = Basic4::CreditScoring::Application::ListPendingSellers.call
+      json applicants: users.map { |u| Present.call(u) }
+    end
+
+    post "/api/admin/seller-applications/:id/approve" do
+      require_admin!
+      result = Basic4::CreditScoring::Application::ApproveSeller.call(params["id"])
+      respond_with(result) { |u| json user: Present.call(u) }
+    end
+
+    post "/api/admin/seller-applications/:id/reject" do
+      require_admin!
+      result = Basic4::CreditScoring::Application::RejectSeller.call(params["id"])
+      respond_with(result) { |u| json user: Present.call(u) }
+    end
+
     # ── account management ────────────────────────────────────────
 
     patch "/api/profile" do
