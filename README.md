@@ -67,7 +67,10 @@ open http://localhost:4567
 | Settlements | http://localhost:4567/admin/settlements |
 | Active Auctions | http://localhost:4567/admin/auctions |
 | Seller Leaderboard | http://localhost:4567/admin/sellers |
-| Public Browse | http://localhost:4567/browse |
+| My Listings | http://localhost:4567/admin/my-listings |
+| My Revenue | http://localhost:4567/admin/my-revenue |
+| My Bids | http://localhost:4567/admin/my-bids |
+| My Won | http://localhost:4567/admin/my-won |
 
 ## API Endpoints
 

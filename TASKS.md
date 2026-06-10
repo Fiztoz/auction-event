@@ -66,9 +66,6 @@
 | Settlements (view only) | ✅ | `app/views/admin/settlements.erb` |
 | Active Auctions | ✅ | `app/views/admin/auctions.erb` |
 | Seller Leaderboard | ✅ | `app/views/admin/sellers.erb` |
-| Public Browse | ✅ | `app/views/reports/browse.erb` |
-| Auction Detail | ✅ | `app/views/reports/detail.erb` |
-| Platform Dashboard | ✅ | `app/views/reports/dashboard.erb` |
 | CSS Styling | ✅ | `public/css/style.css` |
 
 ### Phase 3: Read-Only API ✅
@@ -172,7 +169,10 @@
 | Settlements | http://localhost:4567/admin/settlements |
 | Active Auctions | http://localhost:4567/admin/auctions |
 | Seller Leaderboard | http://localhost:4567/admin/sellers |
-| Public Browse | http://localhost:4567/browse |
+| My Listings | http://localhost:4567/admin/my-listings |
+| My Revenue | http://localhost:4567/admin/my-revenue |
+| My Bids | http://localhost:4567/admin/my-bids |
+| My Won | http://localhost:4567/admin/my-won |
 | RabbitMQ Management | http://localhost:15672 |
 
 ---

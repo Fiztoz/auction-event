@@ -329,16 +329,6 @@ class TestApi < Minitest::Test
     assert last_response.body.include?('Seller Leaderboard')
   end
 
-  def test_browse_page
-    get '/browse'
-    assert_equal 200, last_response.status
-  end
-
-  def test_dashboard_page
-    get '/dashboard'
-    assert_equal 200, last_response.status
-  end
-
   def test_root_redirects_to_admin
     get '/'
     assert_equal 302, last_response.status
