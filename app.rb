@@ -118,25 +118,41 @@ end
 Thread.new do
   sleep 5 # Wait for app to start
   
-  puts '🐰 Starting RabbitMQ consumer...'
+  max_retries = 10
+  retry_delay = 2
   
-  if RabbitMQ.connect
-    puts '✅ RabbitMQ consumer connected'
+  max_retries.times do |attempt|
+    puts "🐰 Starting RabbitMQ consumer (attempt #{attempt + 1}/#{max_retries})..."
     
-    RabbitMQ.consume do |event_type, event_data|
-      puts "📨 Received event: #{event_type}"
-      puts "   Data: #{event_data.inspect}"
-      
-      begin
-        Report.process_event(event_type, event_data)
-        puts "   ✅ Processed: #{event_type}"
-      rescue StandardError => e
-        puts "   ❌ Error processing #{event_type}: #{e.message}"
+    begin
+      if RabbitMQ.connect
+        puts '✅ RabbitMQ consumer connected'
+        
+        RabbitMQ.consume do |event_type, event_data|
+          puts "📨 Received event: #{event_type}"
+          
+          begin
+            Report.process_event(event_type, event_data)
+            puts "   ✅ Processed: #{event_type}"
+          rescue StandardError => e
+            puts "   ❌ Error processing #{event_type}: #{e.message}"
+          end
+        end
+        
+        puts '🎧 Listening for events...'
+        break # Exit retry loop on success
+      else
+        puts "⚠️  RabbitMQ not available (attempt #{attempt + 1}/#{max_retries})"
       end
+    rescue StandardError => e
+      puts "⚠️  RabbitMQ connection error: #{e.message} (attempt #{attempt + 1}/#{max_retries})"
     end
     
-    puts '🎧 Listening for events...'
-  else
-    puts '⚠️  RabbitMQ not available - running without event consumer'
+    # Exponential backoff with cap
+    delay = [retry_delay * (2 ** attempt), 60].min
+    puts "   Retrying in #{delay} seconds..."
+    sleep delay
   end
+  
+  puts '⚠️  RabbitMQ consumer stopped after max retries'
 end

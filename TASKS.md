@@ -32,8 +32,9 @@
 
 ## Service 2: Reporting Service (Microservice)
 
-**Status:** 🔄 PHASE 1 COMPLETE - Read-Only Dashboard  
-**Started:** 2026-06-10
+**Status:** ✅ COMPLETE - Read-Only Dashboard  
+**Started:** 2026-06-10  
+**Completed:** 2026-06-10
 
 ### ⚠️ Important Design Decision
 
@@ -112,6 +113,21 @@
 | UI Controls | ✅ | Interval selector per page |
 | CSS Animations | ✅ | Pulse effect on updates |
 
+### Phase 7: Hardening & Tests ✅
+
+| Task | Status | Description |
+|------|--------|-------------|
+| Event idempotency | ✅ | INSERT IGNORE for event_id |
+| Consumer error handling | ✅ | Drop messages instead of infinite requeue |
+| Health check fix | ✅ | Returns 503 when DB/RabbitMQ down |
+| Settlement status fix | ✅ | created vs invoiced status |
+| Active auctions gauge | ✅ | Computed from live auctions at read time |
+| SQL field whitelist | ✅ | ALLOWED_DAILY_FIELDS / ALLOWED_SELLER_FIELDS |
+| Consumer retry with backoff | ✅ | Exponential backoff, max 10 retries |
+| Unit tests (Report model) | ✅ | 17 tests - event handlers, idempotency |
+| Integration tests (API) | ✅ | 19 tests - all endpoints, pages |
+| Rack-test added | ✅ | Gemfile updated |
+
 ---
 
 ## Docker Services
@@ -175,11 +191,26 @@ See: `docs/reporting-service/EVENT_PAYLOADS.md`
 
 ---
 
+## Test Summary
+
+**Total:** 36 tests, 85 assertions, 0 failures, 0 errors
+
+| Test File | Tests | Assertions | Description |
+|-----------|-------|------------|-------------|
+| `test/test_report_model.rb` | 17 | 49 | Event handlers, idempotency, queries |
+| `test/test_api.rb` | 19 | 36 | All API endpoints and pages |
+
+Run tests:
+```bash
+docker compose run --rm test
+```
+
+---
+
 ## Next Steps
 
 | Task | Priority | Description |
 |------|----------|-------------|
-| Write Tests | Medium | Unit + integration |
 | Add Authentication | Low | Admin login |
 | Add Charts | Low | Data visualization |
 

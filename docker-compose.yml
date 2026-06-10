@@ -67,8 +67,11 @@ services:
       - bundle_cache:/usr/local/bundle
 
   # ── Seeder ──────────────────────────────────────────────
+  # One-time operation: docker compose --profile seed run --rm seeder
   
   seeder:
+    profiles:
+      - seed
     build: .
     environment:
       MARIADB_HOST: mariadb
@@ -79,6 +82,35 @@ services:
     command: ruby bin/seed.rb
     depends_on:
       mariadb:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+
+  # ── Test Runner ──────────────────────────────────────────
+  # Only runs with: docker compose --profile test up -d
+  # Or: docker compose run --rm test
+  
+  test:
+    profiles:
+      - test
+    build: .
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-reporting}
+      MARIADB_USER: root
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-reporting_password}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RACK_ENV: test
+    command: bundle exec rake test
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - .:/app

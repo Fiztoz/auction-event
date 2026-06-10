@@ -31,12 +31,23 @@ A **read-only** reporting and analytics microservice for the Auction Event platf
 # Start all services
 docker compose up -d
 
-# Seed demo data
+# Seed demo data (one-time)
 docker compose run --rm seeder
+
+# Run tests
+docker compose run --rm test
 
 # Access the app
 open http://localhost:4567
 ```
+
+### Docker Profiles
+
+| Profile | Services | Command |
+|---------|----------|----------|
+| (default) | mariadb, rabbitmq, app | `docker compose up -d` |
+| seed | seeder | `docker compose run --rm seeder` |
+| test | test | `docker compose run --rm test` |
 
 ## Services
 
