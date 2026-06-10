@@ -1,0 +1,77 @@
+<% @page_title = 'Settlements' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Settlement Pipeline</h1>
+        <p class="page-subtitle">Track and monitor auction settlements</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<% if @settlements.empty? %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <h3 class="empty-state-title">No settlements in pipeline</h3>
+                <p class="empty-state-text">Settlements will appear here when auctions are completed.</p>
+            </div>
+        </div>
+    </div>
+<% else %>
+    <div id="settlements-list">
+        <% @settlements.each do |settlement| %>
+            <div class="settlement-card">
+                <div class="settlement-header">
+                    <h3><%= settlement[:product_title] %></h3>
+                    <span class="badge <%= status_badge_class(settlement[:status]) %>"><%= settlement[:status] %></span>
+                </div>
+                
+                <div class="settlement-details">
+                    <div class="detail-row">
+                        <span class="label">Seller</span>
+                        <span class="value"><%= settlement[:seller_name] %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Buyer</span>
+                        <span class="value"><%= settlement[:buyer_name] %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Amount</span>
+                        <span class="value font-semibold"><%= format_currency(settlement[:amount_cents]) %></span>
+                    </div>
+                </div>
+                
+                <div class="settlement-steps">
+                    <% ['invoiced', 'paid', 'shipped', 'completed'].each_with_index do |step, idx| %>
+                        <span class="step <%= settlement[:status] == step || ['invoiced', 'paid', 'shipped', 'completed'].index(settlement[:status]) >= idx ? 'completed' : '' %>">
+                            <%= step.capitalize %>
+                        </span>
+                    <% end %>
+                </div>
+            </div>
+        <% end %>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

@@ -1,0 +1,81 @@
+<% @page_title = 'Seller Leaderboard' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Seller Leaderboard</h1>
+        <p class="page-subtitle">Top performing sellers by revenue</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<% if @sellers.empty? %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">🏆</div>
+                <h3 class="empty-state-title">No seller data available</h3>
+                <p class="empty-state-text">Seller statistics will appear here once auctions are completed.</p>
+            </div>
+        </div>
+    </div>
+<% else %>
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Top Sellers (<%= @sellers.length %>)</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Seller</th>
+                        <th>Listed</th>
+                        <th>Approved</th>
+                        <th>Revenue</th>
+                        <th>Bids Received</th>
+                    </tr>
+                </thead>
+                <tbody id="sellers-list">
+                    <% @sellers.each_with_index do |seller, index| %>
+                        <tr>
+                            <td>
+                                <span class="badge <%= index < 3 ? 'badge-warning' : 'badge-secondary' %>">
+                                    #<%= index + 1 %>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="font-semibold"><%= seller[:seller_name] %></div>
+                            </td>
+                            <td><%= seller[:total_listed] %></td>
+                            <td><%= seller[:total_approved] %></td>
+                            <td class="font-semibold"><%= format_currency(seller[:total_revenue]) %></td>
+                            <td><%= seller[:total_bids] %></td>
+                        </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

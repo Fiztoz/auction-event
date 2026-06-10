@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= @page_title || 'Reporting Service' %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <a href="/admin" class="logo">
+                    <div class="logo-icon">R</div>
+                    <span class="logo-text">Reporting Service</span>
+                    <span class="logo-badge">Admin</span>
+                </a>
+                <nav class="nav">
+                    <a href="/admin" class="nav-link <%= 'active' if @page_title == 'Admin Dashboard' %>">
+                        <span class="nav-icon">📊</span>
+                        Overview
+                    </a>
+                    <a href="/admin/approval" class="nav-link <%= 'active' if @page_title == 'Approval Queue' %>">
+                        <span class="nav-icon">✅</span>
+                        Approvals
+                    </a>
+                    <a href="/admin/settlements" class="nav-link <%= 'active' if @page_title == 'Settlements' %>">
+                        <span class="nav-icon">💰</span>
+                        Settlements
+                    </a>
+                    <a href="/admin/auctions" class="nav-link <%= 'active' if @page_title == 'Active Auctions' %>">
+                        <span class="nav-icon">🔨</span>
+                        Auctions
+                    </a>
+                    <a href="/admin/sellers" class="nav-link <%= 'active' if @page_title == 'Seller Leaderboard' %>">
+                        <span class="nav-icon">🏆</span>
+                        Sellers
+                    </a>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <%= yield %>
+        </main>
+    </div>
+</body>
+</html>

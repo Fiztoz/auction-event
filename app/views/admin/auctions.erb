@@ -1,0 +1,87 @@
+<% @page_title = 'Active Auctions' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Active Auctions</h1>
+        <p class="page-subtitle">Currently live and upcoming auctions</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<% if @auctions.empty? %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔨</div>
+                <h3 class="empty-state-title">No active auctions</h3>
+                <p class="empty-state-text">Auctions will appear here when sellers start new listings.</p>
+            </div>
+        </div>
+    </div>
+<% else %>
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Live Auctions (<%= @auctions.length %>)</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Seller</th>
+                        <th>Category</th>
+                        <th>Starting</th>
+                        <th>Current Bid</th>
+                        <th>Bids</th>
+                        <th>Status</th>
+                        <th>Ends In</th>
+                    </tr>
+                </thead>
+                <tbody id="auctions-list">
+                    <% @auctions.each do |auction| %>
+                        <tr>
+                            <td>
+                                <div>
+                                    <div class="font-medium"><%= auction[:title] %></div>
+                                </div>
+                            </td>
+                            <td><%= auction[:seller_name] %></td>
+                            <td><span class="badge badge-secondary"><%= auction[:category] %></span></td>
+                            <td class="text-muted"><%= format_currency(auction[:starting_price_cents]) %></td>
+                            <td class="font-semibold"><%= format_currency(auction[:current_bid_cents]) %></td>
+                            <td><%= auction[:bid_count] %></td>
+                            <td>
+                                <span class="badge <%= auction[:status] == 'live' ? 'badge-success' : 'badge-secondary' %>">
+                                    <%= auction[:status].capitalize %>
+                                </span>
+                            </td>
+                            <td class="text-muted"><%= time_ago(auction[:ends_at]) %></td>
+                        </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

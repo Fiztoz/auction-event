@@ -1,0 +1,94 @@
+<% @page_title = 'Admin Dashboard' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Platform Overview</h1>
+        <p class="page-subtitle">Real-time metrics and analytics</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">👥</div>
+        <div class="stat-content">
+            <div class="stat-value" id="stat-users"><%= @metrics&.dig(:total_users) || 0 %></div>
+            <div class="stat-label">Total Users</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon info">🔨</div>
+        <div class="stat-content">
+            <div class="stat-value" id="stat-auctions"><%= @metrics&.dig(:active_auctions) || 0 %></div>
+            <div class="stat-label">Active Auctions</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">💰</div>
+        <div class="stat-content">
+            <div class="stat-value" id="stat-revenue"><%= format_currency(@metrics&.dig(:total_revenue_cents) || 0) %></div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">📈</div>
+        <div class="stat-content">
+            <div class="stat-value" id="stat-bids"><%= @metrics&.dig(:total_bids) || 0 %></div>
+            <div class="stat-label">Total Bids</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon info">🆕</div>
+        <div class="stat-content">
+            <div class="stat-value" id="stat-new-users"><%= @metrics&.dig(:new_users) || 0 %></div>
+            <div class="stat-label">New Users Today</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">✅</div>
+        <div class="stat-content">
+            <div class="stat-value" id="stat-settlements"><%= @metrics&.dig(:settlements_completed) || 0 %></div>
+            <div class="stat-label">Settlements Done</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+    </div>
+    <div class="card-body">
+        <div class="action-grid">
+            <a href="/admin/approval" class="action-card">
+                <span class="action-badge" id="pending-count"><%= @pending_count %></span>
+                <span class="action-title">Pending Approvals</span>
+            </a>
+            <a href="/admin/settlements" class="action-card">
+                <span class="action-badge"><%= @settlements %></span>
+                <span class="action-title">Settlement Queue</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

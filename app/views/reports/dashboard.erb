@@ -1,0 +1,86 @@
+<% @page_title = 'Dashboard' %>
+
+<section class="dashboard">
+    <h2>📊 Platform Dashboard</h2>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value"><%= @metrics&.dig(:total_users) || 0 %></div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🔨</div>
+            <div class="stat-value"><%= @metrics&.dig(:active_auctions) || 0 %></div>
+            <div class="stat-label">Active Auctions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value"><%= format_currency(@metrics&.dig(:total_revenue_cents) || 0) %></div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value"><%= @metrics&.dig(:total_bids) || 0 %></div>
+            <div class="stat-label">Total Bids</div>
+        </div>
+    </div>
+    
+    <% if @overview.any? %>
+        <div class="card mt-4">
+            <h3>📈 Last 7 Days Overview</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>New Users</th>
+                            <th>Auctions</th>
+                            <th>Bids</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @overview.each do |day| %>
+                            <tr>
+                                <td><%= format_date(day[:report_date]) %></td>
+                                <td><%= day[:new_users] %></td>
+                                <td><%= day[:total_auctions_created] %></td>
+                                <td><%= day[:total_bids] %></td>
+                                <td><%= format_currency(day[:total_revenue_cents]) %></td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% end %>
+    
+    <% if @bid_activity.any? %>
+        <div class="card mt-4">
+            <h3>📊 Bid Activity (Last 7 Days)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Total Bids</th>
+                            <th>Unique Bidders</th>
+                            <th>Avg Bid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @bid_activity.each do |day| %>
+                            <tr>
+                                <td><%= format_date(day[:period_date]) %></td>
+                                <td><%= day[:total_bids] %></td>
+                                <td><%= day[:unique_bidders] %></td>
+                                <td><%= format_currency(day[:avg_bid_cents]) %></td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% end %>
+</section>

@@ -1,0 +1,113 @@
+<% @page_title = 'Approval Queue' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Approval Queue</h1>
+        <p class="page-subtitle">Products waiting for admin approval</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<% if @products.empty? %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <h3 class="empty-state-title">No pending approvals</h3>
+                <p class="empty-state-text">All products have been reviewed. New submissions will appear here.</p>
+            </div>
+        </div>
+    </div>
+<% else %>
+    <div class="card mb-6">
+        <div class="card-header">
+            <h2 class="card-title">Pending Products (<%= @products.length %>)</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Seller</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="approval-list">
+                    <% @products.each do |product| %>
+                        <tr>
+                            <td>
+                                <div>
+                                    <div class="font-medium"><%= product[:title] %></div>
+                                </div>
+                            </td>
+                            <td><%= product[:seller_name] %></td>
+                            <td><span class="badge badge-secondary"><%= product[:category] %></span></td>
+                            <td class="font-medium"><%= format_currency(product[:price_cents]) %></td>
+                            <td class="text-muted"><%= time_ago(product[:created_at]) %></td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                        </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<% end %>
+
+<% if @rejected.any? %>
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Rejected Products (<%= @rejected.length %>)</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Seller</th>
+                        <th>Reason</th>
+                        <th>Rejected</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% @rejected.each do |product| %>
+                        <tr>
+                            <td>
+                                <div>
+                                    <div class="font-medium"><%= product[:title] %></div>
+                                </div>
+                            </td>
+                            <td><%= product[:seller_name] %></td>
+                            <td><span class="text-danger"><%= product[:rejection_reason] %></span></td>
+                            <td class="text-muted"><%= time_ago(product[:updated_at]) %></td>
+                        </tr>
+                    <% end %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

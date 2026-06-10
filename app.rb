@@ -1,167 +1,142 @@
-require "sinatra/base"
-require "sinatra/json"
-require "json"
-require "dotenv/load" if File.exist?(File.expand_path("../.env", __FILE__))
+# frozen_string_literal: true
 
-require_relative "lib/basic4/shared/shared"
-require_relative "lib/basic4/shared/db"
-require_relative "lib/basic4/shared/result"
-require_relative "lib/basic4/shared/user"
-require_relative "lib/basic4/shared/user_presenter"
-require_relative "lib/basic4/shared/product"
-require_relative "lib/basic4/shared/product_presenter"
-require_relative "lib/basic4/shared/bid"
-require_relative "lib/basic4/shared/bid_presenter"
-require_relative "lib/basic4/shared/settlement"
-require_relative "lib/basic4/shared/settlement_presenter"
-require_relative "lib/basic4/shared/ports/product_repository"
-require_relative "lib/basic4/shared/ports/bid_repository"
-require_relative "lib/basic4/shared/ports/settlement_repository"
-require_relative "lib/basic4/shared/ports/notification_repository"
-require_relative "lib/basic4/shared/ports/object_storage"
-require_relative "lib/basic4/shared/container"
-require_relative "lib/basic4/shared/notification"
-require_relative "lib/basic4/shared/notification_presenter"
+require 'sinatra/base'
+require 'sinatra/reloader' if ENV['RACK_ENV'] == 'development'
+require 'json'
+require 'mysql2'
+require 'bunny'
+require 'dotenv/load'
 
-require_relative "lib/basic4/check_existing/application/inputs"
-require_relative "lib/basic4/check_existing/application/check_email"
+# Load application files
+require_relative 'config/database'
+require_relative 'config/rabbitmq'
+require_relative 'app/models/report'
+require_relative 'app/controllers/admin_controller'
+require_relative 'app/controllers/reports_controller'
 
-require_relative "lib/basic4/register/application/inputs"
-require_relative "lib/basic4/register/application/register_user"
+class ReportingApp < Sinatra::Base
+  configure do
+    set :public_folder, File.join(root, 'public')
+    set :views, File.join(root, 'app', 'views')
+    set :erb, layout: :layout
+  end
 
-require_relative "lib/basic4/verify_token/application/verify_email_token"
-require_relative "lib/basic4/verify_token/application/resend_email_token"
+  configure :development do
+    register Sinatra::Reloader
+  end
 
-require_relative "lib/basic4/credit_scoring/application/inputs"
-require_relative "lib/basic4/credit_scoring/application/compute_credit_score"
-require_relative "lib/basic4/credit_scoring/application/start_seller_application"
-require_relative "lib/basic4/credit_scoring/application/list_pending_sellers"
-require_relative "lib/basic4/credit_scoring/application/approve_seller"
-require_relative "lib/basic4/credit_scoring/application/reject_seller"
+  before do
+    # Try to ensure database connection, but don't fail
+    begin
+      @db = Database.client
+    rescue StandardError => e
+      @db = nil
+    end
+  end
 
-require_relative "lib/basic4/buyer_onboarding/application/inputs"
-require_relative "lib/basic4/buyer_onboarding/application/save_shipping_address"
+  # Mount controllers
+  use AdminController
+  use ReportsController
 
-require_relative "lib/basic4/identity/application/inputs"
-require_relative "lib/basic4/identity/application/authenticate_user"
-require_relative "lib/basic4/identity/application/update_profile"
-require_relative "lib/basic4/identity/application/request_password_reset"
-require_relative "lib/basic4/identity/application/reset_password"
-require_relative "lib/basic4/identity/application/list_notifications"
-require_relative "lib/basic4/identity/application/mark_notification_read"
+  # Root redirect
+  get '/' do
+    redirect '/admin'
+  end
 
-require_relative "lib/basic4/product_auction/application/inputs"
-require_relative "lib/basic4/product_auction/application/list_product_for_auction"
-require_relative "lib/basic4/product_auction/application/list_my_auctions"
-require_relative "lib/basic4/product_auction/application/browse_products"
-require_relative "lib/basic4/product_auction/application/list_closed_auctions"
-require_relative "lib/basic4/product_auction/application/update_auction"
-require_relative "lib/basic4/product_auction/application/start_auction"
-require_relative "lib/basic4/product_auction/application/stop_auction"
-require_relative "lib/basic4/product_auction/application/place_bid"
-require_relative "lib/basic4/product_auction/application/show_auction"
-require_relative "lib/basic4/product_auction/application/upload_image"
+  # Health check
+  get '/api/health' do
+    content_type :json
+    begin
+      db_ok = Database.ping
+    rescue StandardError
+      db_ok = false
+    end
+    rabbitmq_ok = RabbitMQ.connected?
+    json_response = {
+      status: (db_ok && rabbitmq_ok) ? 'ok' : 'degraded',
+      database: db_ok ? 'up' : 'down',
+      rabbitmq: rabbitmq_ok ? 'up' : 'down',
+      service: 'reporting',
+      timestamp: Time.now.iso8601
+    }
+    status((db_ok && rabbitmq_ok) ? 200 : 503)
+    json_response.to_json
+  end
 
-require_relative "lib/basic4/settlement/application/invoice_winner"
-require_relative "lib/basic4/settlement/application/record_payment"
-require_relative "lib/basic4/settlement/application/record_shipment"
-require_relative "lib/basic4/settlement/application/complete_settlement"
-require_relative "lib/basic4/settlement/application/admin_auction_detail"
-require_relative "lib/basic4/settlement/application/list_settlement_queue"
+  not_found do
+    content_type :json
+    { error: 'Not found' }.to_json
+  end
 
-require_relative "lib/basic4/admin/application/list_pending_products"
-require_relative "lib/basic4/admin/application/approve_product"
-require_relative "lib/basic4/admin/application/reject_product"
+  error do
+    content_type :json
+    { error: 'Internal server error' }.to_json
+  end
 
-module Basic4
-  class OnboardingApp < Sinatra::Base
-    set :root, File.expand_path("..", __FILE__)
-    set :public_folder, File.expand_path("../public", __FILE__)
-    set :views, File.expand_path("../views", __FILE__)
-    enable :sessions
-    set :session_secret, ENV.fetch("SESSION_SECRET", SecureRandom.hex(32))
+  helpers do
+    def format_currency(cents)
+      "$#{'%.2f' % (cents.to_f / 100)}"
+    end
 
-    Present = Basic4::UserPresenter
-    PresentProduct = Basic4::ProductPresenter
-    PresentBid = Basic4::BidPresenter
-    PresentSettlement = Basic4::SettlementPresenter
-    PresentNotification = Basic4::NotificationPresenter
+    def format_date(date_str)
+      return '' unless date_str
+      Time.parse(date_str.to_s).strftime('%b %d, %Y')
+    end
 
-    configure :production, :development do
-      begin
-        Basic4::DB.ensure_indexes!
-      rescue Mongo::Error => e
-        warn "[basic4] could not create indexes: #{e.message}"
-      end
-
-      begin
-        Basic4::Container.production[:object_storage].ensure_bucket!
-      rescue => e
-        warn "[basic4] could not reach object storage (MinIO): #{e.message}"
+    def time_ago(date_str)
+      return '' unless date_str
+      diff = Time.now - Time.parse(date_str.to_s)
+      case diff
+      when 0..60 then 'just now'
+      when 61..3600 then "#{(diff / 60).to_i}m ago"
+      when 3601..86400 then "#{(diff / 3600).to_i}h ago"
+      else "#{(diff / 86400).to_i}d ago"
       end
     end
 
-    # In development, make the browser revalidate static assets (JS/CSS) instead
-    # of serving a heuristically-cached copy — otherwise front-end edits don't
-    # show on a plain refresh. Sinatra still sends Last-Modified, so unchanged
-    # files come back as cheap 304s. Production keeps its default caching.
-    configure :development do
-      set :static_cache_control, [:no_cache]
-    end
-
-    helpers do
-      def json_body
-        @json_body ||= JSON.parse(request.body.read)
-      rescue JSON::ParserError
-        halt 400, json(error: "invalid JSON")
-      end
-
-      def current_user
-        return nil unless session[:user_id]
-        Basic4::Container.production[:user_repository].find_by_id(session[:user_id])
-      end
-
-      def require_user!
-        halt 401, json(error: "not signed in") unless session[:user_id]
-      end
-
-      def require_seller!
-        require_user!
-        halt 403, json(error: "become a seller first") unless current_user&.role == "seller"
-      end
-
-      def require_admin!
-        require_user!
-        halt 403, json(error: "admins only") unless current_user&.role == "admin"
-      end
-
-      def product_input(body)
-        Basic4::ProductAuction::Application::Inputs::ListProduct.new(
-          title:                body["title"],
-          description:          body["description"],
-          category:             body["category"],
-          starting_price_cents: body["starting_price_cents"],
-          duration_days:        body["duration_days"],
-          images:               body["images"]
-        )
-      end
-
-      def respond_with(result, success_status: 200, failure_status: 422, &on_success)
-        case result
-        in Basic4::Result::Success(value:)
-          status success_status
-          on_success.call(value)
-        in Basic4::Result::Failure(field:, message:)
-          status failure_status
-          json error: message, field: field
-        end
+    def status_badge_class(status)
+      case status
+      when 'pending_approval' then 'badge-warning'
+      when 'draft', 'approved' then 'badge-success'
+      when 'rejected' then 'badge-danger'
+      when 'live' then 'badge-info'
+      when 'ended' then 'badge-secondary'
+      when 'completed' then 'badge-primary'
+      when 'invoiced' then 'badge-warning'
+      when 'paid' then 'badge-info'
+      when 'shipped' then 'badge-success'
+      else 'badge-secondary'
       end
     end
   end
 end
 
-require_relative "routes"
+# ============================================
+# RabbitMQ Consumer Background Thread
+# ============================================
 
-if Basic4::OnboardingApp.app_file == $PROGRAM_NAME
-  Basic4::OnboardingApp.run!
+Thread.new do
+  sleep 5 # Wait for app to start
+  
+  puts '🐰 Starting RabbitMQ consumer...'
+  
+  if RabbitMQ.connect
+    puts '✅ RabbitMQ consumer connected'
+    
+    RabbitMQ.consume do |event_type, event_data|
+      puts "📨 Received event: #{event_type}"
+      puts "   Data: #{event_data.inspect}"
+      
+      begin
+        Report.process_event(event_type, event_data)
+        puts "   ✅ Processed: #{event_type}"
+      rescue StandardError => e
+        puts "   ❌ Error processing #{event_type}: #{e.message}"
+      end
+    end
+    
+    puts '🎧 Listening for events...'
+  else
+    puts '⚠️  RabbitMQ not available - running without event consumer'
+  end
 end

@@ -1,3 +1,5 @@
-require_relative "app"
+# frozen_string_literal: true
 
-run Basic4::OnboardingApp
+require_relative 'app'
+
+run ReportingApp
