@@ -65,6 +65,33 @@
                 </tbody>
             </table>
         </div>
+        <!-- Mobile card layout -->
+        <div class="data-card-list">
+            <% @sellers.each_with_index do |seller, index| %>
+                <div class="data-card">
+                    <div class="data-card-title">
+                        <span class="badge <%= index < 3 ? 'badge-warning' : 'badge-secondary' %>" style="margin-right: 8px;">#<%= index + 1 %></span>
+                        <%= seller[:seller_name] %>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Listed</span>
+                        <span class="data-card-value"><%= seller[:total_listed] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Approved</span>
+                        <span class="data-card-value"><%= seller[:total_approved] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Revenue</span>
+                        <span class="data-card-value font-semibold"><%= format_currency(seller[:total_revenue]) %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Bids</span>
+                        <span class="data-card-value"><%= seller[:total_bids] %></span>
+                    </div>
+                </div>
+            <% end %>
+        </div>
     </div>
 <% end %>
 

@@ -110,6 +110,62 @@ module Report
   end
 
   # ============================================
+  # SELLER DASHBOARD
+  # ============================================
+
+  # My Listings (Seller) - Get products listed by a seller
+  def self.my_listings(seller_id)
+    Database.execute(
+      'SELECT * FROM report_approval_queue WHERE seller_id = ? ORDER BY created_at DESC',
+      [seller_id]
+    ).to_a
+  end
+
+  # My Revenue (Seller) - Get revenue stats for a seller
+  def self.my_revenue(seller_id)
+    row = Database.execute(
+      <<~SQL,
+        SELECT seller_id, seller_name,
+               COALESCE(SUM(products_listed), 0) as total_listed,
+               COALESCE(SUM(products_approved), 0) as total_approved,
+               COALESCE(SUM(products_rejected), 0) as total_rejected,
+               COALESCE(SUM(auctions_started), 0) as total_auctions_started,
+               COALESCE(SUM(auctions_ended), 0) as total_auctions_ended,
+               COALESCE(SUM(revenue_cents), 0) as total_revenue_cents,
+               COALESCE(SUM(bids_received), 0) as total_bids_received
+        FROM report_seller_stats
+        WHERE seller_id = ?
+        GROUP BY seller_id, seller_name
+      SQL
+      [seller_id]
+    ).first
+    return nil unless row
+
+    # Convert BigDecimal values to integers for consistent JSON output
+    row.transform_values { |v| v.is_a?(BigDecimal) ? v.to_i : v }
+  end
+
+  # ============================================
+  # BUYER DASHBOARD
+  # ============================================
+
+  # My Bids (Buyer) - Get settlements/auctions where buyer participated
+  def self.my_bids(buyer_id)
+    Database.execute(
+      'SELECT * FROM report_settlements WHERE buyer_id = ? ORDER BY created_at DESC',
+      [buyer_id]
+    ).to_a
+  end
+
+  # My Won (Buyer) - Get completed auction wins for buyer
+  def self.my_won(buyer_id)
+    Database.execute(
+      "SELECT * FROM report_settlements WHERE buyer_id = ? AND status = 'completed' ORDER BY created_at DESC",
+      [buyer_id]
+    ).to_a
+  end
+
+  # ============================================
   # EVENT PROCESSING (Write via events only)
   # ============================================
 

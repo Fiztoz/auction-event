@@ -1,0 +1,123 @@
+<% @page_title = 'My Won Auctions' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">My Won Auctions</h1>
+        <p class="page-subtitle">Auctions you have won</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Compact inline search bar -->
+<form action="/admin/my-won" method="get">
+    <div class="search-bar">
+        <div class="form-group">
+            <label class="form-label">Buyer ID</label>
+            <input type="text" name="buyer_id" class="form-control" placeholder="e.g. buyer-001" value="<%= params[:buyer_id] %>">
+        </div>
+        <button type="submit" class="btn btn-primary">View Won Auctions</button>
+    </div>
+</form>
+
+<% if params[:buyer_id] && !params[:buyer_id].empty? %>
+    <% if @won.empty? %>
+        <div class="card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🏆</div>
+                    <h3 class="empty-state-title">No won auctions yet</h3>
+                    <p class="empty-state-text">This buyer hasn't won any auctions yet.</p>
+                    <div class="mt-4">
+                        <span class="badge badge-secondary">Buyer: <%= params[:buyer_id] %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% else %>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Your Wins (<%= @won.length %>)</h2>
+                <span class="badge badge-secondary">Buyer: <%= params[:buyer_id] %></span>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Seller</th>
+                            <th>Amount</th>
+                            <th>Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody id="won-list">
+                        <% @won.each do |win| %>
+                            <tr>
+                                <td>
+                                    <div class="font-medium"><%= win[:product_title] %></div>
+                                </td>
+                                <td><%= win[:seller_name] %></td>
+                                <td class="font-semibold"><%= format_currency(win[:amount_cents]) %></td>
+                                <td class="text-muted"><%= time_ago(win[:updated_at]) %></td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Mobile card layout -->
+            <div class="data-card-list">
+                <% @won.each do |win| %>
+                    <div class="data-card">
+                        <div class="data-card-title"><%= win[:product_title] %></div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Seller</span>
+                            <span class="data-card-value"><%= win[:seller_name] %></span>
+                        </div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Amount</span>
+                            <span class="data-card-value font-semibold"><%= format_currency(win[:amount_cents]) %></span>
+                        </div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Completed</span>
+                            <span class="data-card-value text-muted"><%= time_ago(win[:updated_at]) %></span>
+                        </div>
+                    </div>
+                <% end %>
+                <div class="data-card-footer">
+                    Total Spent: <%= format_currency(@won.sum { |w| w[:amount_cents].to_i }) %>
+                </div>
+            </div>
+        </div>
+    <% end %>
+<% else %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3 class="empty-state-title">Enter a Buyer ID</h3>
+                <p class="empty-state-text">Enter a buyer ID above and click "View Won Auctions" to see their wins.</p>
+            </div>
+        </div>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

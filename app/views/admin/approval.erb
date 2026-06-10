@@ -63,6 +63,30 @@
                 </tbody>
             </table>
         </div>
+        <!-- Mobile card layout -->
+        <div class="data-card-list">
+            <% @products.each do |product| %>
+                <div class="data-card">
+                    <div class="data-card-title"><%= product[:title] %></div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Seller</span>
+                        <span class="data-card-value"><%= product[:seller_name] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Category</span>
+                        <span class="data-card-value"><span class="badge badge-secondary"><%= product[:category] %></span></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Price</span>
+                        <span class="data-card-value font-medium"><%= format_currency(product[:price_cents]) %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Submitted</span>
+                        <span class="data-card-value text-muted"><%= time_ago(product[:created_at]) %></span>
+                    </div>
+                </div>
+            <% end %>
+        </div>
     </div>
 <% end %>
 
@@ -96,6 +120,26 @@
                     <% end %>
                 </tbody>
             </table>
+        </div>
+        <!-- Mobile card layout -->
+        <div class="data-card-list">
+            <% @rejected.each do |product| %>
+                <div class="data-card">
+                    <div class="data-card-title"><%= product[:title] %></div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Seller</span>
+                        <span class="data-card-value"><%= product[:seller_name] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Reason</span>
+                        <span class="data-card-value text-danger"><%= product[:rejection_reason] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Rejected</span>
+                        <span class="data-card-value text-muted"><%= time_ago(product[:updated_at]) %></span>
+                    </div>
+                </div>
+            <% end %>
         </div>
     </div>
 <% end %>

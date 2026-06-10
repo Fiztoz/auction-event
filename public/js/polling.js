@@ -1,6 +1,7 @@
 /**
  * Polling Service for Admin Dashboard
  * Automatically refreshes dashboard data at configurable intervals
+ * with loading states, error handling, and retry logic.
  */
 
 const PollingService = {
@@ -8,13 +9,19 @@ const PollingService = {
   config: {
     interval: 10000, // 10 seconds default
     enabled: true,
+    maxRetries: 3,
+    retryDelay: 2000,
     endpoints: {
       overview: '/api/reports/overview',
       approvalQueue: '/api/reports/approval-queue',
       settlements: '/api/reports/settlements',
       activeAuctions: '/api/reports/active-auctions',
       sellers: '/api/reports/sellers',
-      bidActivity: '/api/reports/bid-activity'
+      bidActivity: '/api/reports/bid-activity',
+      myListings: '/api/reports/my-listings',
+      myRevenue: '/api/reports/my-revenue',
+      myBids: '/api/reports/my-bids',
+      myWon: '/api/reports/my-won'
     }
   },
 
@@ -23,12 +30,13 @@ const PollingService = {
     timers: {},
     lastUpdate: {},
     isPaused: false,
-    errorCount: {}
+    errorCount: {},
+    retryAttempts: {}
   },
 
   /**
    * Initialize polling for a specific page
-   * @param {string} page - Page name (overview, approval, settlements, auctions, sellers)
+   * @param {string} page - Page name
    */
   init(page) {
     console.log(`🔄 Initializing polling for: ${page}`);
@@ -49,6 +57,18 @@ const PollingService = {
       case 'sellers':
         this.startSellersPolling();
         break;
+      case 'myListings':
+        this.startMyListingsPolling();
+        break;
+      case 'myRevenue':
+        this.startMyRevenuePolling();
+        break;
+      case 'myBids':
+        this.startMyBidsPolling();
+        break;
+      case 'myWon':
+        this.startMyWonPolling();
+        break;
       default:
         console.log(`No polling configured for page: ${page}`);
     }
@@ -61,6 +81,75 @@ const PollingService = {
         this.resume();
       }
     });
+  },
+
+  /**
+   * Show loading spinner
+   */
+  showLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    // Don't show spinner if container is an empty state
+    if (container.querySelector('.empty-state')) return;
+    
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-overlay';
+    spinner.id = `loading-${containerId}`;
+    spinner.innerHTML = '<div class="loading-spinner"></div>';
+    container.style.position = 'relative';
+    container.appendChild(spinner);
+  },
+
+  /**
+   * Hide loading spinner
+   */
+  hideLoading(containerId) {
+    const spinner = document.getElementById(`loading-${containerId}`);
+    if (spinner) {
+      spinner.remove();
+    }
+  },
+
+  /**
+   * Show error message
+   */
+  showError(containerId, message) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Remove existing error
+    this.hideError(containerId);
+    
+    const errorEl = document.createElement('div');
+    errorEl.className = 'polling-error';
+    errorEl.id = `error-${containerId}`;
+    errorEl.innerHTML = `
+      <div class="polling-error-content">
+        <span class="polling-error-icon">⚠️</span>
+        <span class="polling-error-text">${this.escapeHtml(message)}</span>
+        <button class="btn btn-sm btn-secondary poll-retry-btn" onclick="PollingService.retry('${containerId}')">Retry</button>
+      </div>
+    `;
+    container.parentNode.insertBefore(errorEl, container);
+  },
+
+  /**
+   * Hide error message
+   */
+  hideError(containerId) {
+    const error = document.getElementById(`error-${containerId}`);
+    if (error) {
+      error.remove();
+    }
+  },
+
+  /**
+   * Retry a failed fetch
+   */
+  retry(containerId) {
+    this.hideError(containerId);
+    this.state.retryAttempts[containerId] = 0;
+    this.state.errorCount[containerId] = 0;
   },
 
   /**
@@ -119,11 +208,79 @@ const PollingService = {
   },
 
   /**
+   * Start polling for my listings
+   */
+  startMyListingsPolling() {
+    this.state.timers.myListings = setInterval(() => {
+      if (!this.state.isPaused) {
+        const sellerId = this.getUrlParam('seller_id');
+        if (sellerId) {
+          this.fetchAndUpdateWithParams('myListings', { seller_id: sellerId }, this.updateMyListings.bind(this));
+        }
+      }
+    }, this.config.interval);
+  },
+
+  /**
+   * Start polling for my revenue
+   */
+  startMyRevenuePolling() {
+    this.state.timers.myRevenue = setInterval(() => {
+      if (!this.state.isPaused) {
+        const sellerId = this.getUrlParam('seller_id');
+        if (sellerId) {
+          this.fetchAndUpdateWithParams('myRevenue', { seller_id: sellerId }, this.updateMyRevenue.bind(this));
+        }
+      }
+    }, this.config.interval);
+  },
+
+  /**
+   * Start polling for my bids
+   */
+  startMyBidsPolling() {
+    this.state.timers.myBids = setInterval(() => {
+      if (!this.state.isPaused) {
+        const buyerId = this.getUrlParam('buyer_id');
+        if (buyerId) {
+          this.fetchAndUpdateWithParams('myBids', { buyer_id: buyerId }, this.updateMyBids.bind(this));
+        }
+      }
+    }, this.config.interval);
+  },
+
+  /**
+   * Start polling for my won auctions
+   */
+  startMyWonPolling() {
+    this.state.timers.myWon = setInterval(() => {
+      if (!this.state.isPaused) {
+        const buyerId = this.getUrlParam('buyer_id');
+        if (buyerId) {
+          this.fetchAndUpdateWithParams('myWon', { buyer_id: buyerId }, this.updateMyWon.bind(this));
+        }
+      }
+    }, this.config.interval);
+  },
+
+  /**
+   * Get URL query parameter
+   */
+  getUrlParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  },
+
+  /**
    * Fetch data from endpoint and call update function
    */
   async fetchAndUpdate(endpoint, updateFn) {
     try {
       const url = this.config.endpoints[endpoint];
+      const containerId = this.getContainerId(endpoint);
+      
+      this.showLoading(containerId);
+      
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -133,6 +290,10 @@ const PollingService = {
       const data = await response.json();
       this.state.lastUpdate[endpoint] = new Date();
       this.state.errorCount[endpoint] = 0;
+      this.state.retryAttempts[endpoint] = 0;
+      
+      this.hideLoading(containerId);
+      this.hideError(containerId);
       
       updateFn(data);
       this.showLastUpdated(endpoint);
@@ -141,12 +302,85 @@ const PollingService = {
       console.error(`Polling error for ${endpoint}:`, error);
       this.state.errorCount[endpoint] = (this.state.errorCount[endpoint] || 0) + 1;
       
+      const containerId = this.getContainerId(endpoint);
+      this.hideLoading(containerId);
+      
+      // Show error after 2 consecutive failures
+      if (this.state.errorCount[endpoint] >= 2) {
+        this.showError(containerId, `Failed to load data (${error.message})`);
+      }
+      
       // Stop polling after 5 consecutive errors
       if (this.state.errorCount[endpoint] >= 5) {
         console.warn(`Stopping polling for ${endpoint} after 5 errors`);
         this.stop(endpoint);
       }
     }
+  },
+
+  /**
+   * Fetch data with query parameters
+   */
+  async fetchAndUpdateWithParams(endpoint, params, updateFn) {
+    try {
+      const url = new URL(this.config.endpoints[endpoint], window.location.origin);
+      Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
+      
+      const containerId = this.getContainerId(endpoint);
+      
+      this.showLoading(containerId);
+      
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      this.state.lastUpdate[endpoint] = new Date();
+      this.state.errorCount[endpoint] = 0;
+      this.state.retryAttempts[endpoint] = 0;
+      
+      this.hideLoading(containerId);
+      this.hideError(containerId);
+      
+      updateFn(data);
+      this.showLastUpdated(endpoint);
+      
+    } catch (error) {
+      console.error(`Polling error for ${endpoint}:`, error);
+      this.state.errorCount[endpoint] = (this.state.errorCount[endpoint] || 0) + 1;
+      
+      const containerId = this.getContainerId(endpoint);
+      this.hideLoading(containerId);
+      
+      if (this.state.errorCount[endpoint] >= 2) {
+        this.showError(containerId, `Failed to load data (${error.message})`);
+      }
+      
+      if (this.state.errorCount[endpoint] >= 5) {
+        console.warn(`Stopping polling for ${endpoint} after 5 errors`);
+        this.stop(endpoint);
+      }
+    }
+  },
+
+  /**
+   * Get container element ID for an endpoint
+   */
+  getContainerId(endpoint) {
+    const map = {
+      overview: 'stat-users',
+      approvalQueue: 'approval-list',
+      settlements: 'settlements-list',
+      activeAuctions: 'auctions-list',
+      sellers: 'sellers-list',
+      myListings: 'listings-list',
+      myRevenue: 'stat-revenue-total',
+      myBids: 'bids-list',
+      myWon: 'won-list'
+    };
+    return map[endpoint] || null;
   },
 
   /**
@@ -286,6 +520,95 @@ const PollingService = {
         <td>${this.formatNumber(seller.total_approved)}</td>
         <td>${this.formatCurrency(seller.total_revenue)}</td>
         <td>${this.formatNumber(seller.total_bids)}</td>
+      </tr>
+    `).join('');
+  },
+
+  /**
+   * Update my listings
+   */
+  updateMyListings(data) {
+    const listings = data.listings || [];
+    const container = document.getElementById('listings-list');
+    if (!container) return;
+    
+    if (listings.length === 0) {
+      container.innerHTML = '<div class="empty-state"><p>📋 No listings found</p></div>';
+      return;
+    }
+    
+    container.innerHTML = listings.map(product => `
+      <tr>
+        <td>
+          <div class="font-medium">${this.escapeHtml(product.title)}</div>
+          ${product.description ? `<div class="text-muted" style="font-size: 0.8125rem;">${this.escapeHtml(product.description.length > 60 ? product.description.substring(0, 60) + '...' : product.description)}</div>` : ''}
+        </td>
+        <td><span class="badge badge-secondary">${this.escapeHtml(product.category)}</span></td>
+        <td class="font-medium">${this.formatCurrency(product.price_cents)}</td>
+        <td><span class="badge ${this.statusBadgeClass(product.status)}">${product.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span></td>
+        <td class="text-muted">${this.timeAgo(product.created_at)}</td>
+      </tr>
+    `).join('');
+  },
+
+  /**
+   * Update my revenue stats
+   */
+  updateMyRevenue(data) {
+    const revenue = data.revenue;
+    if (!revenue) return;
+    
+    this.updateElement('stat-revenue-total', this.formatCurrency(revenue.total_revenue_cents || 0));
+    this.updateElement('stat-listed', this.formatNumber(revenue.total_listed || 0));
+    this.updateElement('stat-approved', this.formatNumber(revenue.total_approved || 0));
+    this.updateElement('stat-rejected', this.formatNumber(revenue.total_rejected || 0));
+    this.updateElement('stat-auctions-started', this.formatNumber(revenue.total_auctions_started || 0));
+    this.updateElement('stat-bids-received', this.formatNumber(revenue.total_bids_received || 0));
+  },
+
+  /**
+   * Update my bids
+   */
+  updateMyBids(data) {
+    const bids = data.bids || [];
+    const container = document.getElementById('bids-list');
+    if (!container) return;
+    
+    if (bids.length === 0) {
+      container.innerHTML = '<div class="empty-state"><p>🔨 No bid activity found</p></div>';
+      return;
+    }
+    
+    container.innerHTML = bids.map(bid => `
+      <tr>
+        <td><div class="font-medium">${this.escapeHtml(bid.product_title)}</div></td>
+        <td>${this.escapeHtml(bid.seller_name)}</td>
+        <td class="font-semibold">${this.formatCurrency(bid.amount_cents)}</td>
+        <td><span class="badge ${this.statusBadgeClass(bid.status)}">${bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}</span></td>
+        <td class="text-muted">${this.timeAgo(bid.created_at)}</td>
+      </tr>
+    `).join('');
+  },
+
+  /**
+   * Update my won auctions
+   */
+  updateMyWon(data) {
+    const won = data.won || [];
+    const container = document.getElementById('won-list');
+    if (!container) return;
+    
+    if (won.length === 0) {
+      container.innerHTML = '<div class="empty-state"><p>🏆 No won auctions yet</p></div>';
+      return;
+    }
+    
+    container.innerHTML = won.map(win => `
+      <tr>
+        <td><div class="font-medium">${this.escapeHtml(win.product_title)}</div></td>
+        <td>${this.escapeHtml(win.seller_name)}</td>
+        <td class="font-semibold">${this.formatCurrency(win.amount_cents)}</td>
+        <td class="text-muted">${this.timeAgo(win.updated_at)}</td>
       </tr>
     `).join('');
   },
@@ -446,6 +769,10 @@ const PollingService = {
     if (path.includes('/settlements')) return 'settlements';
     if (path.includes('/auctions')) return 'auctions';
     if (path.includes('/sellers')) return 'sellers';
+    if (path.includes('/my-listings')) return 'myListings';
+    if (path.includes('/my-revenue')) return 'myRevenue';
+    if (path.includes('/my-bids')) return 'myBids';
+    if (path.includes('/my-won')) return 'myWon';
     return null;
   }
 };

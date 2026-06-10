@@ -1,0 +1,156 @@
+<% @page_title = 'My Revenue' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">My Revenue</h1>
+        <p class="page-subtitle">Your earnings and selling performance</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Compact inline search bar -->
+<form action="/admin/my-revenue" method="get">
+    <div class="search-bar">
+        <div class="form-group">
+            <label class="form-label">Seller ID</label>
+            <input type="text" name="seller_id" class="form-control" placeholder="e.g. seller-001" value="<%= params[:seller_id] %>">
+        </div>
+        <button type="submit" class="btn btn-primary">View Revenue</button>
+    </div>
+</form>
+
+<% if params[:seller_id] && !params[:seller_id].empty? %>
+    <% if @revenue.nil? %>
+        <div class="card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <h3 class="empty-state-title">No revenue data available</h3>
+                    <p class="empty-state-text">Revenue stats will appear once this seller has listed and sold products.</p>
+                    <div class="mt-4">
+                        <span class="badge badge-secondary">Seller: <%= params[:seller_id] %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% else %>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon success">💰</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stat-revenue-total"><%= format_currency(@revenue[:total_revenue_cents] || 0) %></div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon primary">📋</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stat-listed"><%= @revenue[:total_listed] || 0 %></div>
+                    <div class="stat-label">Products Listed</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">✅</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stat-approved"><%= @revenue[:total_approved] || 0 %></div>
+                    <div class="stat-label">Approved</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon danger">❌</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stat-rejected"><%= @revenue[:total_rejected] || 0 %></div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info">🔨</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stat-auctions-started"><%= @revenue[:total_auctions_started] || 0 %></div>
+                    <div class="stat-label">Auctions Started</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning">📈</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stat-bids-received"><%= @revenue[:total_bids_received] || 0 %></div>
+                    <div class="stat-label">Bids Received</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Performance Summary</h2>
+                <span class="badge badge-secondary">Seller: <%= params[:seller_id] %></span>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid" style="margin-bottom: 0;">
+                    <div class="detail-row">
+                        <span class="label">Seller Name</span>
+                        <span class="value font-semibold"><%= @revenue[:seller_name] %></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Approval Rate</span>
+                        <span class="value">
+                            <% total_products = (@revenue[:total_approved] || 0) + (@revenue[:total_rejected] || 0) %>
+                            <% if total_products > 0 %>
+                                <span class="badge <%= ((@revenue[:total_approved].to_f / total_products * 100) >= 70) ? 'badge-success' : 'badge-warning' %>">
+                                    <%= (@revenue[:total_approved].to_f / total_products * 100).round %>% approved
+                                </span>
+                            <% else %>
+                                <span class="badge badge-secondary">No data</span>
+                            <% end %>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Avg Revenue per Auction</span>
+                        <span class="value font-semibold">
+                            <% if (@revenue[:total_auctions_ended] || 0) > 0 %>
+                                <%= format_currency(@revenue[:total_revenue_cents].to_f / @revenue[:total_auctions_ended]) %>
+                            <% else %>
+                                <span class="text-muted">—</span>
+                            <% end %>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Auctions Ended</span>
+                        <span class="value"><%= @revenue[:total_auctions_ended] || 0 %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% end %>
+<% else %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3 class="empty-state-title">Enter a Seller ID</h3>
+                <p class="empty-state-text">Enter a seller ID above and click "View Revenue" to see their earnings.</p>
+            </div>
+        </div>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

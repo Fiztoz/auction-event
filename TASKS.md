@@ -128,6 +128,28 @@
 | Integration tests (API) | ✅ | 19 tests - all endpoints, pages |
 | Rack-test added | ✅ | Gemfile updated |
 
+### Phase 8: Seller & Buyer Dashboards ✅
+
+| Task | Status | Description |
+|------|--------|-------------|
+| My Listings endpoint | ✅ | View seller's products |
+| My Revenue endpoint | ✅ | View seller's revenue stats |
+| My Bids endpoint | ✅ | View buyer's bids |
+| My Won endpoint | ✅ | View buyer's won auctions |
+| Seller Dashboard UI | ✅ | Listings + revenue views |
+| Buyer Dashboard UI | ✅ | Bids + won items views |
+| Loading states | ✅ | Spinner overlay during fetch |
+| Error handling | ✅ | Error messages with retry |
+| Nav updated | ✅ | Added 4 new nav links |
+
+### Phase 9: Tests Updated ✅
+
+| Task | Status | Description |
+|------|--------|-------------|
+| Seller tests | ✅ | my-listings, my-revenue endpoints |
+| Buyer tests | ✅ | my-bids, my-won endpoints |
+| Total tests | ✅ | 55 tests, 137 assertions |
+
 ---
 
 ## Docker Services
@@ -193,12 +215,12 @@ See: `docs/reporting-service/EVENT_PAYLOADS.md`
 
 ## Test Summary
 
-**Total:** 36 tests, 85 assertions, 0 failures, 0 errors
+**Total:** 55 tests, 137 assertions, 0 failures, 0 errors
 
 | Test File | Tests | Assertions | Description |
 |-----------|-------|------------|-------------|
 | `test/test_report_model.rb` | 17 | 49 | Event handlers, idempotency, queries |
-| `test/test_api.rb` | 19 | 36 | All API endpoints and pages |
+| `test/test_api.rb` | 38 | 88 | All API endpoints and pages |
 
 Run tests:
 ```bash

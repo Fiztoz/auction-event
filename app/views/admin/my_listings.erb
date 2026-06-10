@@ -1,0 +1,143 @@
+<% @page_title = 'My Listings' %>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">My Listings</h1>
+        <p class="page-subtitle">Products you have listed on the marketplace</p>
+    </div>
+    <div class="page-actions">
+        <div class="dashboard-controls">
+            <span id="last-updated" class="last-updated">Last updated: just now</span>
+            <select id="poll-interval" class="poll-interval">
+                <option value="5000">5 sec</option>
+                <option value="10000" selected>10 sec</option>
+                <option value="30000">30 sec</option>
+                <option value="60000">1 min</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Compact inline search bar -->
+<form action="/admin/my-listings" method="get">
+    <div class="search-bar">
+        <div class="form-group">
+            <label class="form-label">Seller ID</label>
+            <input type="text" name="seller_id" class="form-control" placeholder="e.g. seller-001" value="<%= params[:seller_id] %>">
+        </div>
+        <button type="submit" class="btn btn-primary">View Listings</button>
+    </div>
+</form>
+
+<% if params[:seller_id] && !params[:seller_id].empty? %>
+    <% if @listings.empty? %>
+        <div class="card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <h3 class="empty-state-title">No listings found</h3>
+                    <p class="empty-state-text">This seller hasn't listed any products yet.</p>
+                    <div class="mt-4">
+                        <span class="badge badge-secondary">Seller: <%= params[:seller_id] %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% else %>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Products (<%= @listings.length %>)</h2>
+                <span class="badge badge-secondary">Seller: <%= params[:seller_id] %></span>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listings-list">
+                        <% @listings.each do |product| %>
+                            <tr>
+                                <td>
+                                    <div>
+                                        <div class="font-medium"><%= product[:title] %></div>
+                                        <% if product[:description] && !product[:description].empty? %>
+                                            <div class="text-muted" style="font-size: 0.8125rem;"><%= product[:description].length > 60 ? product[:description][0..60] + '...' : product[:description] %></div>
+                                        <% end %>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-secondary"><%= product[:category] %></span></td>
+                                <td class="font-medium"><%= format_currency(product[:price_cents]) %></td>
+                                <td>
+                                    <span class="badge <%= status_badge_class(product[:status]) %>">
+                                        <%= product[:status].gsub('_', ' ').capitalize %>
+                                    </span>
+                                    <% if product[:rejection_reason] %>
+                                        <div class="text-danger mt-1" style="font-size: 0.75rem;"><%= product[:rejection_reason] %></div>
+                                    <% end %>
+                                </td>
+                                <td class="text-muted"><%= time_ago(product[:created_at]) %></td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Mobile card layout -->
+            <div class="data-card-list">
+                <% @listings.each do |product| %>
+                    <div class="data-card">
+                        <div class="data-card-title"><%= product[:title] %></div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Category</span>
+                            <span class="data-card-value"><span class="badge badge-secondary"><%= product[:category] %></span></span>
+                        </div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Price</span>
+                            <span class="data-card-value font-medium"><%= format_currency(product[:price_cents]) %></span>
+                        </div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Status</span>
+                            <span class="data-card-value">
+                                <span class="badge <%= status_badge_class(product[:status]) %>"><%= product[:status].gsub('_', ' ').capitalize %></span>
+                            </span>
+                        </div>
+                        <div class="data-card-row">
+                            <span class="data-card-label">Submitted</span>
+                            <span class="data-card-value text-muted"><%= time_ago(product[:created_at]) %></span>
+                        </div>
+                        <% if product[:rejection_reason] %>
+                            <div class="text-danger" style="font-size: 0.75rem; margin-top: 4px;"><%= product[:rejection_reason] %></div>
+                        <% end %>
+                    </div>
+                <% end %>
+            </div>
+        </div>
+    <% end %>
+<% else %>
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3 class="empty-state-title">Enter a Seller ID</h3>
+                <p class="empty-state-text">Enter a seller ID above and click "View Listings" to see their products.</p>
+            </div>
+        </div>
+    </div>
+<% end %>
+
+<script src="/js/polling.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const intervalSelect = document.getElementById('poll-interval');
+    if (intervalSelect) {
+      intervalSelect.addEventListener('change', (e) => {
+        PollingService.setInterval(parseInt(e.target.value));
+      });
+    }
+  });
+</script>

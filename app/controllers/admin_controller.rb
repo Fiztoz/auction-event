@@ -86,4 +86,80 @@ class AdminController < Sinatra::Base
     days = (params[:days] || 7).to_i
     { bidActivity: Report.bid_activity(days) }.to_json
   end
+
+  # ============================================
+  # SELLER DASHBOARD (Phase 4)
+  # ============================================
+
+  # My Listings - Seller's products
+  get '/admin/my-listings' do
+    @seller_id = params[:seller_id]
+    @listings = @seller_id ? Report.my_listings(@seller_id) : []
+    erb :'admin/my_listings'
+  end
+
+  # My Revenue - Seller's revenue stats
+  get '/admin/my-revenue' do
+    @seller_id = params[:seller_id]
+    @revenue = @seller_id ? Report.my_revenue(@seller_id) : nil
+    erb :'admin/my_revenue'
+  end
+
+  # ============================================
+  # BUYER DASHBOARD (Phase 4)
+  # ============================================
+
+  # My Bids - Buyer's bid history
+  get '/admin/my-bids' do
+    @buyer_id = params[:buyer_id]
+    @bids = @buyer_id ? Report.my_bids(@buyer_id) : []
+    erb :'admin/my_bids'
+  end
+
+  # My Won - Buyer's won auctions
+  get '/admin/my-won' do
+    @buyer_id = params[:buyer_id]
+    @won = @buyer_id ? Report.my_won(@buyer_id) : []
+    erb :'admin/my_won'
+  end
+
+  # ============================================
+  # SELLER JSON API ENDPOINTS
+  # ============================================
+
+  # API: My Listings
+  get '/api/reports/my-listings' do
+    content_type :json
+    seller_id = params[:seller_id]
+    halt 400, { error: 'seller_id is required' }.to_json unless seller_id
+    { listings: Report.my_listings(seller_id) }.to_json
+  end
+
+  # API: My Revenue
+  get '/api/reports/my-revenue' do
+    content_type :json
+    seller_id = params[:seller_id]
+    halt 400, { error: 'seller_id is required' }.to_json unless seller_id
+    { revenue: Report.my_revenue(seller_id) }.to_json
+  end
+
+  # ============================================
+  # BUYER JSON API ENDPOINTS
+  # ============================================
+
+  # API: My Bids
+  get '/api/reports/my-bids' do
+    content_type :json
+    buyer_id = params[:buyer_id]
+    halt 400, { error: 'buyer_id is required' }.to_json unless buyer_id
+    { bids: Report.my_bids(buyer_id) }.to_json
+  end
+
+  # API: My Won
+  get '/api/reports/my-won' do
+    content_type :json
+    buyer_id = params[:buyer_id]
+    halt 400, { error: 'buyer_id is required' }.to_json unless buyer_id
+    { won: Report.my_won(buyer_id) }.to_json
+  end
 end

@@ -33,10 +33,11 @@ module Minitest
 
     def clean_test_data
       Database.execute("DELETE FROM report_events WHERE event_id LIKE 'test-%'")
-      Database.execute("DELETE FROM report_approval_queue WHERE product_id LIKE 'test-%'")
+      Database.execute("DELETE FROM report_approval_queue WHERE product_id LIKE 'test-%' OR product_id LIKE 'test-api-%'")
       Database.execute("DELETE FROM report_active_auctions WHERE product_id LIKE 'test-%'")
-      Database.execute("DELETE FROM report_settlements WHERE settlement_id LIKE 'test-%'")
-      Database.execute("DELETE FROM report_seller_stats WHERE seller_id LIKE 'test-%'")
+      Database.execute("DELETE FROM report_settlements WHERE settlement_id LIKE 'test-%' OR settlement_id LIKE 'test-api-%'")
+      Database.execute("DELETE FROM report_seller_stats WHERE seller_id LIKE 'test-%' OR seller_id LIKE 'test-api-%'")
+      Database.execute("DELETE FROM report_bid_activity WHERE period_date = CURDATE()")
       Database.execute("DELETE FROM report_platform_daily WHERE report_date = CURDATE()")
     end
 

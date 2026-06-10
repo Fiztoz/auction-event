@@ -18,7 +18,10 @@
                     <span class="logo-text">Reporting Service</span>
                     <span class="logo-badge">Admin</span>
                 </a>
-                <nav class="nav">
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                    <span></span><span></span><span></span>
+                </button>
+                <nav class="nav" id="main-nav">
                     <a href="/admin" class="nav-link <%= 'active' if @page_title == 'Admin Dashboard' %>">
                         <span class="nav-icon">📊</span>
                         Overview
@@ -39,6 +42,22 @@
                         <span class="nav-icon">🏆</span>
                         Sellers
                     </a>
+                    <a href="/admin/my-listings" class="nav-link <%= 'active' if @page_title == 'My Listings' %>">
+                        <span class="nav-icon">📋</span>
+                        My Listings
+                    </a>
+                    <a href="/admin/my-revenue" class="nav-link <%= 'active' if @page_title == 'My Revenue' %>">
+                        <span class="nav-icon">💰</span>
+                        My Revenue
+                    </a>
+                    <a href="/admin/my-bids" class="nav-link <%= 'active' if @page_title == 'My Bids' %>">
+                        <span class="nav-icon">🔨</span>
+                        My Bids
+                    </a>
+                    <a href="/admin/my-won" class="nav-link <%= 'active' if @page_title == 'My Won Auctions' %>">
+                        <span class="nav-icon">🏆</span>
+                        My Won
+                    </a>
                 </nav>
             </div>
         </header>
@@ -47,5 +66,24 @@
             <%= yield %>
         </main>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('nav-toggle');
+            const nav = document.getElementById('main-nav');
+            if (toggle && nav) {
+                toggle.addEventListener('click', () => {
+                    toggle.classList.toggle('active');
+                    nav.classList.toggle('open');
+                });
+                // Close nav when a link is tapped
+                nav.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        toggle.classList.remove('active');
+                        nav.classList.remove('open');
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -71,6 +71,38 @@
                 </tbody>
             </table>
         </div>
+        <!-- Mobile card layout -->
+        <div class="data-card-list">
+            <% @auctions.each do |auction| %>
+                <div class="data-card">
+                    <div class="data-card-title"><%= auction[:title] %></div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Seller</span>
+                        <span class="data-card-value"><%= auction[:seller_name] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Category</span>
+                        <span class="data-card-value"><span class="badge badge-secondary"><%= auction[:category] %></span></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Current Bid</span>
+                        <span class="data-card-value font-semibold"><%= format_currency(auction[:current_bid_cents]) %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Bids</span>
+                        <span class="data-card-value"><%= auction[:bid_count] %></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Status</span>
+                        <span class="data-card-value"><span class="badge <%= auction[:status] == 'live' ? 'badge-success' : 'badge-secondary' %>"><%= auction[:status].capitalize %></span></span>
+                    </div>
+                    <div class="data-card-row">
+                        <span class="data-card-label">Ends In</span>
+                        <span class="data-card-value text-muted"><%= time_ago(auction[:ends_at]) %></span>
+                    </div>
+                </div>
+            <% end %>
+        </div>
     </div>
 <% end %>
 
