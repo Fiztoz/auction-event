@@ -1,24 +1,23 @@
-FROM jruby:10.0.5.0-jre
+FROM ruby:3.2-slim
 
-ENV BUNDLE_PATH=/usr/local/bundle \
-    BUNDLE_JOBS=4 \
-    BUNDLE_RETRY=3 \
-    RACK_ENV=production \
-    PORT=4567
-
-# netbase provides /etc/protocols + /etc/services. Without it, JRuby's Mongo
-# driver monitor thread fails getprotobyname("tcp") -> "getprotobyname_r failed".
-RUN apt-get update -qq \
- && apt-get install -y --no-install-recommends build-essential netbase \
- && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Copy Gemfile and install gems
 COPY Gemfile ./
 RUN bundle install
 
+# Copy application code
 COPY . .
 
+# Expose port
 EXPOSE 4567
 
+# Start the application
 CMD ["bundle", "exec", "rackup", "-o", "0.0.0.0", "-p", "4567"]

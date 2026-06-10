@@ -1,63 +1,90 @@
 services:
-  mongo:
-    image: mongo:7
+  # ── Database ──────────────────────────────────────────────
+  
+  mariadb:
+    image: mariadb:11
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD:-reporting_password}
+      MYSQL_DATABASE: ${MARIADB_DATABASE:-reporting}
     volumes:
-      - mongo_data:/data/db
+      - ./db/mariadb/init:/docker-entrypoint-initdb.d
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
-  minio:
-    image: minio/minio
+  # ── Event Bus ──────────────────────────────────────────────
+  
+  rabbitmq:
+    image: rabbitmq:3-management
     restart: unless-stopped
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # web console
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     volumes:
-      - minio_data:/data
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ── Reporting Service (Ruby/Sinatra Fullstack) ──────────────
+  
   app:
     build: .
     restart: unless-stopped
     depends_on:
-      mongo:
+      mariadb:
         condition: service_healthy
-      minio:
-        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
-      MONGO_URL: mongodb://mongo:27017
-      MONGO_DB: basic4_onboarding
-      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production-this-is-only-a-development-placeholder-secret}
-      # development so static assets get Cache-Control: no-cache (browser always
-      # revalidates -> live JS/CSS edits show without a manual hard-refresh).
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-reporting}
+      MARIADB_USER: root
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-reporting_password}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       RACK_ENV: development
       PORT: 4567
-      MINIO_ENDPOINT: http://minio:9000
-      # Browser-facing URL for stored images (resolves from the host, not the app container).
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MINIO_BUCKET: ${MINIO_BUCKET:-basic4-products}
     ports:
       - "${PORT:-4567}:4567"
     volumes:
-      # Live-mount the source so edits show without rebuilding the image.
-      # JS/CSS update on refresh; Ruby changes need `docker compose restart app`.
       - .:/app
-      # Keep gems in their own volume so the bind-mount above doesn't hide them.
+      - bundle_cache:/usr/local/bundle
+
+  # ── Seeder ──────────────────────────────────────────────
+  
+  seeder:
+    build: .
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-reporting}
+      MARIADB_USER: root
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-reporting_password}
+    command: ruby bin/seed.rb
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - .:/app
       - bundle_cache:/usr/local/bundle
 
 volumes:
-  mongo_data:
+  mariadb_data:
+  rabbitmq_data:
   bundle_cache:
-  minio_data:
