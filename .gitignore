@@ -4,7 +4,6 @@
 /tmp/
 /log/
 *.gem
+*.zip
 .env
-
-
 .DS_Store
