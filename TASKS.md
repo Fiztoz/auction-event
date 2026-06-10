@@ -1,40 +1,16 @@
 # Task Tracker
 
-**Project:** Auction Event Platform  
-**Last Updated:** 2026-06-10
+**Project:** Auction Event Platform — Reporting Service  
+**Last Updated:** 2026-06-11  
+**Status:** ✅ COMPLETE
 
 ---
 
-## Status Legend
+## Service: Reporting Service (Microservice)
 
-- ✅ COMPLETED
-- 🔄 IN PROGRESS
-- ⏳ PENDING
-- ❌ BLOCKED
-
----
-
-## Service 1: Basic4 (Original Monolith)
-
-**Status:** ✅ COMPLETED  
-**Completed:** 2026-06-09
-
-### Features Implemented
-
-| Feature | Status |
-|---------|--------|
-| Product Approval Workflow | ✅ |
-| Notification System | ✅ |
-| Admin Dashboard | ✅ |
-| 164 tests, 50 assertions, 0 failures | ✅ |
-
----
-
-## Service 2: Reporting Service (Microservice)
-
-**Status:** ✅ COMPLETE - Read-Only Dashboard  
+**Status:** ✅ COMPLETE  
 **Started:** 2026-06-10  
-**Completed:** 2026-06-10
+**Completed:** 2026-06-11
 
 ### ⚠️ Important Design Decision
 
@@ -46,6 +22,8 @@
 
 ---
 
+## Implementation Phases
+
 ### Phase 1: Infrastructure ✅
 
 | Task | Status | Files |
@@ -56,50 +34,40 @@
 | Docker Setup | ✅ | `Dockerfile`, `docker-compose.yml` |
 | Environment Config | ✅ | `.env.example` |
 
-### Phase 2: Read-Only Views ✅
+### Phase 2: Admin Dashboard ✅
 
 | Task | Status | Files |
 |------|--------|-------|
 | Layout Template | ✅ | `app/views/layout.erb` |
 | Admin Dashboard | ✅ | `app/views/admin/index.erb` |
-| Approval Queue (view only) | ✅ | `app/views/admin/approval.erb` |
-| Settlements (view only) | ✅ | `app/views/admin/settlements.erb` |
+| Approval Queue | ✅ | `app/views/admin/approval.erb` |
+| Settlements | ✅ | `app/views/admin/settlements.erb` |
 | Active Auctions | ✅ | `app/views/admin/auctions.erb` |
 | Seller Leaderboard | ✅ | `app/views/admin/sellers.erb` |
 | CSS Styling | ✅ | `public/css/style.css` |
 
-### Phase 3: Read-Only API ✅
+### Phase 3: API Endpoints ✅
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/health` | GET | Health check |
-| `/api/reports/overview` | GET | Platform overview metrics |
-| `/api/reports/approval-queue` | GET | List products by status |
-| `/api/reports/settlements` | GET | List settlements |
-| `/api/reports/active-auctions` | GET | List active auctions |
-| `/api/reports/sellers` | GET | Seller leaderboard |
-| `/api/reports/bid-activity` | GET | Bid activity analytics |
+| `/api/reports/overview` | GET | Platform overview |
+| `/api/reports/approval-queue` | GET | Approval queue |
+| `/api/reports/settlements` | GET | Settlements |
+| `/api/reports/active-auctions` | GET | Active auctions |
+| `/api/reports/sellers` | GET | Seller stats |
+| `/api/reports/bid-activity` | GET | Bid activity |
 
 ### Phase 4: Event Processing ✅
 
 | Task | Status | Description |
 |------|--------|-------------|
 | Event Consumer | ✅ | Consume from RabbitMQ |
-| Event Handlers | ✅ | Process 9 event types |
+| Event Handlers | ✅ | Process 12 event types |
 | Projection Updates | ✅ | Update tables on events |
+| Event Idempotency | ✅ | INSERT IGNORE for event_id |
 
-### Phase 5: Demo Data ✅
-
-| Task | Status | Description |
-|------|--------|-------------|
-| Seed Script | ✅ | 31 days metrics |
-| Approval Queue Data | ✅ | 8 products (5 pending, 3 rejected) |
-| Active Auctions Data | ✅ | 10 auctions |
-| Settlements Data | ✅ | 8 settlements |
-| Seller Stats Data | ✅ | 5 sellers |
-| Bid Activity Data | ✅ | 720 hours |
-
-### Phase 6: Polling Service ✅
+### Phase 5: Polling Service ✅
 
 | Task | Status | Description |
 |------|--------|-------------|
@@ -107,45 +75,29 @@
 | Configurable Intervals | ✅ | 5s, 10s, 30s, 1min |
 | Auto-pause on tab hide | ✅ | Pause when tab not visible |
 | Error handling | ✅ | Retry with backoff |
+| Loading states | ✅ | Spinner overlay |
 | UI Controls | ✅ | Interval selector per page |
-| CSS Animations | ✅ | Pulse effect on updates |
+
+### Phase 6: Seller & Buyer Dashboards ✅
+
+| Task | Status | Description |
+|------|--------|-------------|
+| My Listings | ✅ | View seller's products |
+| My Revenue | ✅ | View seller's revenue stats |
+| My Bids | ✅ | View buyer's bids |
+| My Won | ✅ | View buyer's won auctions |
+| ID Input | ✅ | Always visible, easy to switch |
 
 ### Phase 7: Hardening & Tests ✅
 
 | Task | Status | Description |
 |------|--------|-------------|
-| Event idempotency | ✅ | INSERT IGNORE for event_id |
-| Consumer error handling | ✅ | Drop messages instead of infinite requeue |
 | Health check fix | ✅ | Returns 503 when DB/RabbitMQ down |
-| Settlement status fix | ✅ | created vs invoiced status |
-| Active auctions gauge | ✅ | Computed from live auctions at read time |
-| SQL field whitelist | ✅ | ALLOWED_DAILY_FIELDS / ALLOWED_SELLER_FIELDS |
+| Consumer error handling | ✅ | Drop messages instead of infinite requeue |
 | Consumer retry with backoff | ✅ | Exponential backoff, max 10 retries |
-| Unit tests (Report model) | ✅ | 17 tests - event handlers, idempotency |
-| Integration tests (API) | ✅ | 19 tests - all endpoints, pages |
-| Rack-test added | ✅ | Gemfile updated |
-
-### Phase 8: Seller & Buyer Dashboards ✅
-
-| Task | Status | Description |
-|------|--------|-------------|
-| My Listings endpoint | ✅ | View seller's products |
-| My Revenue endpoint | ✅ | View seller's revenue stats |
-| My Bids endpoint | ✅ | View buyer's bids |
-| My Won endpoint | ✅ | View buyer's won auctions |
-| Seller Dashboard UI | ✅ | Listings + revenue views |
-| Buyer Dashboard UI | ✅ | Bids + won items views |
-| Loading states | ✅ | Spinner overlay during fetch |
-| Error handling | ✅ | Error messages with retry |
-| Nav updated | ✅ | Added 4 new nav links |
-
-### Phase 9: Tests Updated ✅
-
-| Task | Status | Description |
-|------|--------|-------------|
-| Seller tests | ✅ | my-listings, my-revenue endpoints |
-| Buyer tests | ✅ | my-bids, my-won endpoints |
-| Total tests | ✅ | 55 tests, 137 assertions |
+| SQL field whitelist | ✅ | ALLOWED_DAILY_FIELDS / ALLOWED_SELLER_FIELDS |
+| Unit tests | ✅ | 17 tests - event handlers, idempotency |
+| Integration tests | ✅ | 36 tests - all endpoints, pages |
 
 ---
 
@@ -156,14 +108,21 @@
 | `mariadb` | 3306 | ✅ Running |
 | `rabbitmq` | 5672, 15672 | ✅ Running |
 | `app` | 4567 | ✅ Running |
-| `seeder` | - | ✅ Completed |
+
+### Docker Profiles
+
+| Profile | Services | Command |
+|---------|----------|---------|
+| (default) | mariadb, rabbitmq, app | `docker compose up -d` |
+| seed | seeder | `docker compose run --rm seeder` |
+| test | test | `docker compose run --rm test` |
 
 ---
 
 ## URLs
 
-| Service | URL |
-|---------|-----|
+| Page | URL |
+|------|-----|
 | Admin Dashboard | http://localhost:4567/admin |
 | Approval Queue | http://localhost:4567/admin/approval |
 | Settlements | http://localhost:4567/admin/settlements |
@@ -177,14 +136,10 @@
 
 ---
 
-## Event Payloads
+## Events Consumed
 
-See: `docs/reporting-service/EVENT_PAYLOADS.md`
-
-### Events Consumed
-
-| Event | Source | Handler |
-|-------|--------|---------|
+| Event | Exchange | Handler |
+|-------|----------|---------|
 | `product.listed` | selling | ✅ |
 | `product.approved` | selling | ✅ |
 | `product.rejected` | selling | ✅ |
@@ -200,41 +155,19 @@ See: `docs/reporting-service/EVENT_PAYLOADS.md`
 
 ---
 
-## What This Service Does NOT Do
-
-| Action | Handled By |
-|--------|------------|
-| Approve/Reject Products | Selling Service |
-| Record Payment | Settlement Service |
-| Record Shipment | Settlement Service |
-| Place Bids | Bidding Service |
-| Start/End Auctions | Bidding Service |
-| Create Users | Identity Service |
-
----
-
 ## Test Summary
 
-**Total:** 55 tests, 137 assertions, 0 failures, 0 errors
+**Total:** 53 tests, 135 assertions, 0 failures, 0 errors
 
 | Test File | Tests | Assertions | Description |
 |-----------|-------|------------|-------------|
 | `test/test_report_model.rb` | 17 | 49 | Event handlers, idempotency, queries |
-| `test/test_api.rb` | 38 | 88 | All API endpoints and pages |
+| `test/test_api.rb` | 36 | 86 | All API endpoints and pages |
 
 Run tests:
 ```bash
 docker compose run --rm test
 ```
-
----
-
-## Next Steps
-
-| Task | Priority | Description |
-|------|----------|-------------|
-| Add Authentication | Low | Admin login |
-| Add Charts | Low | Data visualization |
 
 ---
 
@@ -246,7 +179,6 @@ docker compose run --rm test
 | Database Schema | `docs/reporting-service/DATABASE.md` |
 | Event Design | `docs/reporting-service/EVENTS.md` |
 | Event Payloads | `docs/reporting-service/EVENT_PAYLOADS.md` |
-| Implementation Guide | `docs/reporting-service/IMPLEMENTATION.md` |
 | Design System | `docs/reporting-service/DESIGN.md` |
 
 ---

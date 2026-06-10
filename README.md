@@ -15,7 +15,8 @@ A **read-only** reporting and analytics microservice for the Auction Event platf
 - 🔨 Active auctions monitoring
 - 🏆 Seller leaderboard
 - 📈 Bid activity analytics
-- 🌐 Public auction browse
+- 👤 Seller dashboard (My Listings, My Revenue)
+- 👤 Buyer dashboard (My Bids, My Won)
 
 ## Tech Stack
 
@@ -44,7 +45,7 @@ open http://localhost:4567
 ### Docker Profiles
 
 | Profile | Services | Command |
-|---------|----------|----------|
+|---------|----------|---------|
 | (default) | mariadb, rabbitmq, app | `docker compose up -d` |
 | seed | seeder | `docker compose run --rm seeder` |
 | test | test | `docker compose run --rm test` |
@@ -71,6 +72,7 @@ open http://localhost:4567
 | My Revenue | http://localhost:4567/admin/my-revenue |
 | My Bids | http://localhost:4567/admin/my-bids |
 | My Won | http://localhost:4567/admin/my-won |
+| RabbitMQ Management | http://localhost:15672 |
 
 ## API Endpoints
 
@@ -78,12 +80,17 @@ All API endpoints are **read-only**:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
+| `/api/health` | GET | Health check (returns 503 if degraded) |
 | `/api/reports/overview` | GET | Platform overview |
 | `/api/reports/approval-queue` | GET | Approval queue |
 | `/api/reports/settlements` | GET | Settlements |
 | `/api/reports/active-auctions` | GET | Active auctions |
 | `/api/reports/sellers` | GET | Seller stats |
 | `/api/reports/bid-activity` | GET | Bid activity |
+| `/api/reports/my-listings?seller_id=xxx` | GET | Seller's listings |
+| `/api/reports/my-revenue?seller_id=xxx` | GET | Seller's revenue |
+| `/api/reports/my-bids?buyer_id=xxx` | GET | Buyer's bids |
+| `/api/reports/my-won?buyer_id=xxx` | GET | Buyer's won auctions |
 
 ## Events Consumed
 
@@ -107,7 +114,7 @@ ruby bin/seed.rb
 bundle exec rackup -p 4567
 
 # Run tests
-ruby test/test_*.rb
+docker compose run --rm test
 ```
 
 ## Documentation
@@ -116,7 +123,6 @@ ruby test/test_*.rb
 - [Database Schema](docs/reporting-service/DATABASE.md)
 - [Event Design](docs/reporting-service/EVENTS.md)
 - [Event Payloads](docs/reporting-service/EVENT_PAYLOADS.md)
-- [Implementation Guide](docs/reporting-service/IMPLEMENTATION.md)
 - [Design System](docs/reporting-service/DESIGN.md)
 
 ## License

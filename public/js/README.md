@@ -9,6 +9,7 @@ Auto-refreshing dashboard data for the Reporting Service admin panel.
 - 🔄 Automatic error recovery
 - 📊 Real-time data updates
 - 🎨 Visual feedback on updates
+- ⚠️ Error display with retry button
 
 ## Usage
 
@@ -19,6 +20,7 @@ The polling service is automatically loaded on all admin pages. It will:
 3. Show "Last updated" timestamp
 4. Pause when the tab is hidden
 5. Resume when the tab is visible
+6. Show error state after 2 consecutive failures
 
 ## Configuration
 
@@ -57,6 +59,10 @@ PollingService.stopAll();
 | `/api/reports/active-auctions` | Active auctions |
 | `/api/reports/sellers` | Seller leaderboard |
 | `/api/reports/bid-activity` | Bid analytics |
+| `/api/reports/my-listings?seller_id=xxx` | Seller's listings |
+| `/api/reports/my-revenue?seller_id=xxx` | Seller's revenue |
+| `/api/reports/my-bids?buyer_id=xxx` | Buyer's bids |
+| `/api/reports/my-won?buyer_id=xxx` | Buyer's won auctions |
 
 ## Pages with Polling
 
@@ -67,12 +73,16 @@ PollingService.stopAll();
 | `/admin/settlements` | Settlement pipeline |
 | `/admin/auctions` | Active auctions |
 | `/admin/sellers` | Seller leaderboard |
+| `/admin/my-listings` | Seller's listings |
+| `/admin/my-revenue` | Seller's revenue |
+| `/admin/my-bids` | Buyer's bids |
+| `/admin/my-won` | Buyer's won auctions |
 
 ## Error Handling
 
 - Retries automatically on network errors
 - Stops polling after 5 consecutive errors
-- Shows error state in UI
+- Shows error state in UI with retry button
 - Logs errors to console
 
 ## Browser Support
@@ -85,4 +95,4 @@ PollingService.stopAll();
 ## Files
 
 - `polling.js` - Main polling service
-- `style.css` - Polling UI styles
+- `../css/style.css` - Polling UI styles
