@@ -56,13 +56,13 @@ The reporting service is **event-driven**. All data flows into the service via e
 
 ### 3.1 Selling Service Events
 
-#### `product_listed`
+#### `product.listed`
 
 Fired when a seller creates a new product listing.
 
 ```json
 {
-  "event_type": "product_listed",
+  "event_type": "product.listed",
   "source_service": "selling",
   "payload": {
     "product_id": "uuid-1234",
@@ -83,13 +83,13 @@ Fired when a seller creates a new product listing.
 
 ---
 
-#### `product_approved`
+#### `product.approved`
 
 Fired when an admin approves a product.
 
 ```json
 {
-  "event_type": "product_approved",
+  "event_type": "product.approved",
   "source_service": "selling",
   "payload": {
     "product_id": "uuid-1234",
@@ -105,13 +105,13 @@ Fired when an admin approves a product.
 
 ---
 
-#### `product_rejected`
+#### `product.rejected`
 
 Fired when an admin rejects a product.
 
 ```json
 {
-  "event_type": "product_rejected",
+  "event_type": "product.rejected",
   "source_service": "selling",
   "payload": {
     "product_id": "uuid-1234",
@@ -128,16 +128,44 @@ Fired when an admin rejects a product.
 
 ---
 
-### 3.2 Buying Service Events
+#### `auction.started`
 
-#### `user_registered`
+Fired when an auction goes live.
+
+```json
+{
+  "event_type": "auction.started",
+  "source_service": "selling",
+  "payload": {
+    "product_id": "uuid-1234",
+    "seller_id": "seller-5678",
+    "title": "Vintage Desk Lamp",
+    "category": "home",
+    "starting_price_cents": 4500,
+    "status": "live",
+    "started_at": "2026-06-09T12:00:00Z",
+    "ends_at": "2026-06-16T12:00:00Z"
+  }
+}
+```
+
+**Projection updates:**
+- `report_active_auctions` → INSERT
+- `report_platform_daily` → active_auctions += 1
+- `report_seller_stats` → auctions_started += 1
+
+---
+
+### 3.2 Onboarding Service Events
+
+#### `user.registered`
 
 Fired when a new user account is created.
 
 ```json
 {
-  "event_type": "user_registered",
-  "source_service": "buying",
+  "event_type": "user.registered",
+  "source_service": "onboarding",
   "payload": {
     "user_id": "user-1111",
     "role": "buyer",
@@ -150,26 +178,6 @@ Fired when a new user account is created.
 **Projection updates:**
 - `report_platform_daily` → total_users += 1, new_users += 1
 - `report_platform_daily` → total_buyers += 1 (if role=buyer) or total_sellers += 1 (if role=seller)
-
----
-
-#### `buyer_onboarded`
-
-Fired when a buyer completes onboarding.
-
-```json
-{
-  "event_type": "buyer_onboarded",
-  "source_service": "buying",
-  "payload": {
-    "user_id": "user-1111",
-    "onboarded_at": "2026-06-09T09:30:00Z"
-  }
-}
-```
-
-**Projection updates:**
-- None (informational event for auditing)
 
 ---
 
@@ -203,13 +211,13 @@ Fired when a seller starts an auction.
 
 ---
 
-#### `bid_placed`
+#### `bid.placed`
 
 Fired when a new bid is placed.
 
 ```json
 {
-  "event_type": "bid_placed",
+  "event_type": "bid.placed",
   "source_service": "bidding",
   "payload": {
     "product_id": "uuid-1234",
@@ -229,13 +237,13 @@ Fired when a new bid is placed.
 
 ---
 
-#### `auction_ended`
+#### `auction.ended`
 
 Fired when an auction is stopped or expires.
 
 ```json
 {
-  "event_type": "auction_ended",
+  "event_type": "auction.ended",
   "source_service": "bidding",
   "payload": {
     "product_id": "uuid-1234",
@@ -250,20 +258,19 @@ Fired when an auction is stopped or expires.
 
 **Projection updates:**
 - `report_active_auctions` → UPDATE status = 'ended'
-- `report_platform_daily` → active_auctions -= 1
 - `report_seller_stats` → auctions_ended += 1
 
 ---
 
 ### 3.4 Settlement Service Events
 
-#### `invoice_created`
+#### `settlement.created`
 
-Fired when a winner is invoiced.
+Fired when a settlement is created.
 
 ```json
 {
-  "event_type": "invoice_created",
+  "event_type": "settlement.created",
   "source_service": "settlement",
   "payload": {
     "settlement_id": "settle-7777",
@@ -271,24 +278,45 @@ Fired when a winner is invoiced.
     "seller_id": "seller-5678",
     "buyer_id": "buyer-2222",
     "amount_cents": 5000,
-    "status": "invoiced",
+    "status": "created",
     "created_at": "2026-06-16T12:30:00Z"
   }
 }
 ```
 
 **Projection updates:**
-- `report_settlements` → INSERT
+- `report_settlements` → INSERT with status 'created'
 
 ---
 
-#### `payment_received`
+#### `settlement.invoiced`
+
+Fired when a winner is invoiced.
+
+```json
+{
+  "event_type": "settlement.invoiced",
+  "source_service": "settlement",
+  "payload": {
+    "settlement_id": "settle-7777",
+    "amount_cents": 5000,
+    "invoiced_at": "2026-06-16T12:35:00Z"
+  }
+}
+```
+
+**Projection updates:**
+- `report_settlements` → UPDATE status = 'invoiced'
+
+---
+
+#### `settlement.paid`
 
 Fired when payment is recorded.
 
 ```json
 {
-  "event_type": "payment_received",
+  "event_type": "settlement.paid",
   "source_service": "settlement",
   "payload": {
     "settlement_id": "settle-7777",
@@ -303,13 +331,33 @@ Fired when payment is recorded.
 
 ---
 
-#### `settlement_completed`
+#### `settlement.shipped`
+
+Fired when shipment is recorded.
+
+```json
+{
+  "event_type": "settlement.shipped",
+  "source_service": "settlement",
+  "payload": {
+    "settlement_id": "settle-7777",
+    "shipped_at": "2026-06-18T14:00:00Z"
+  }
+}
+```
+
+**Projection updates:**
+- `report_settlements` → UPDATE status = 'shipped'
+
+---
+
+#### `settlement.completed`
 
 Fired when settlement is finalized.
 
 ```json
 {
-  "event_type": "settlement_completed",
+  "event_type": "settlement.completed",
   "source_service": "settlement",
   "payload": {
     "settlement_id": "settle-7777",
@@ -393,36 +441,51 @@ end
 
 ## 6. Event Bus Integration
 
-### 6.1 Kafka Configuration
+### 6.1 RabbitMQ Configuration
+
+**Exchange naming:** `{publisher}` (publisher service name)
+**Queue naming:** `{consumer}` (consumer service name)
 
 ```yaml
-# config/kafka.yml
-development:
-  brokers: ["localhost:9092"]
-  group_id: "reporting-service"
-  topics:
-    - "selling.events"
-    - "buying.events"
-    - "bidding.events"
-    - "settlement.events"
+# Exchanges (one per publisher service)
+exchanges:
+  - name: "selling"
+    type: "topic"
+    events: [product.listed, product.approved, product.rejected, auction.started]
+  - name: "bidding"
+    type: "topic"
+    events: [bid.placed, auction.ended]
+  - name: "settlement"
+    type: "topic"
+    events: [settlement.created, settlement.invoiced, settlement.paid, settlement.shipped, settlement.completed]
+  - name: "onboarding"
+    type: "topic"
+    events: [user.registered]
+
+# Queue (consumer service name)
+queue:
+  name: "reporting"
+  durable: true
 ```
 
-### 6.2 RabbitMQ Configuration
+### 6.2 Queue Bindings
 
-```yaml
-# config/rabbitmq.yml
-development:
-  host: "localhost"
-  port: 5672
-  exchanges:
-    - name: "selling.events"
-      type: "topic"
-    - name: "buying.events"
-      type: "topic"
-    - name: "bidding.events"
-      type: "topic"
-    - name: "settlement.events"
-      type: "topic"
+```
+selling ─────────────┬─── product.listed ──────┐
+                     ├─── product.approved ────┤
+                     ├─── product.rejected ────┤
+                     └─── auction.started ─────┤
+                                               │
+bidding ─────────────┬─── bid.placed ──────────┤
+                     └─── auction.ended ───────┼──► Queue: reporting
+                                               │
+settlement ──────────┬─── settlement.created ──┤
+                     ├─── settlement.invoiced ─┤
+                     ├─── settlement.paid ─────┤
+                     ├─── settlement.shipped ──┤
+                     └─── settlement.completed ┤
+                                               │
+onboarding ─────────┬─── user.registered ─────┘
 ```
 
 ---
@@ -433,8 +496,8 @@ All events must conform to this schema:
 
 ```ruby
 EventSchema = {
-  event_type: String,      # Required: "product_listed", "bid_placed", etc.
-  source_service: String,  # Required: "selling", "buying", "bidding", "settlement"
+  event_type: String,      # Required: "product.listed", "bid.placed", etc.
+  source_service: String,  # Required: "selling", "onboarding", "bidding", "settlement"
   payload: Hash,           # Required: Event-specific data
   created_at: Time         # Required: ISO 8601 timestamp
 }
