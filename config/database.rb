@@ -3,10 +3,12 @@
 require 'mysql2'
 
 module Database
-  @client = nil
+  # Thread-local MySQL connections — each Puma thread gets its own client.
+  # This avoids "connection is in use" errors when multiple threads
+  # try to query simultaneously.
 
   def self.client
-    @client ||= create_client
+    Thread.current[:db_client] ||= create_client
   end
 
   def self.create_client
@@ -25,8 +27,10 @@ module Database
   end
 
   def self.reset!
-    @client&.close
-    @client = nil
+    if (c = Thread.current[:db_client])
+      c.close rescue nil
+    end
+    Thread.current[:db_client] = nil
   end
 
   def self.execute(sql, params = [])

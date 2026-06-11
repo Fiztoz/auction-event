@@ -11,6 +11,7 @@ require 'dotenv/load'
 require_relative 'config/database'
 require_relative 'config/rabbitmq'
 require_relative 'app/models/report'
+require_relative 'app/services/sse_broadcaster'
 require_relative 'app/controllers/admin_controller'
 require_relative 'app/controllers/reports_controller'
 
@@ -133,6 +134,11 @@ Thread.new do
           
           begin
             Report.process_event(event_type, event_data)
+            SSEBroadcaster.broadcast(event_type, {
+              event_type: event_type,
+              timestamp: Time.now.iso8601,
+              data: event_data
+            })
             puts "   ✅ Processed: #{event_type}"
           rescue StandardError => e
             puts "   ❌ Error processing #{event_type}: #{e.message}"
@@ -154,5 +160,5 @@ Thread.new do
     sleep delay
   end
   
-  puts '⚠️  RabbitMQ consumer stopped after max retries'
+  puts "🏁 RabbitMQ consumer thread exiting (connected = #{RabbitMQ.connected?})"
 end

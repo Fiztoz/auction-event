@@ -227,6 +227,8 @@ module Report
       handle_settlement_completed(data)
     when 'user.registered'
       handle_user_registered(data)
+    when 'seller.registered'
+      handle_seller_registered(data)
     end
   end
 
@@ -253,7 +255,14 @@ module Report
         "UPDATE report_approval_queue SET status = 'draft', updated_at = NOW() WHERE product_id = ?",
         [data['product_id']]
       )
-      update_seller_stat(data['seller_id'], data['seller_name'], 'products_approved', 1)
+      # Look up seller info from approval queue since event payload may not include it
+      seller = Database.execute(
+        'SELECT seller_id, seller_name FROM report_approval_queue WHERE product_id = ? LIMIT 1',
+        [data['product_id']]
+      ).first
+      if seller
+        update_seller_stat(seller[:seller_id], seller[:seller_name], 'products_approved', 1)
+      end
     end
 
     def handle_product_rejected(data)
@@ -261,7 +270,14 @@ module Report
         "UPDATE report_approval_queue SET status = 'rejected', rejection_reason = ?, updated_at = NOW() WHERE product_id = ?",
         [data['reason'], data['product_id']]
       )
-      update_seller_stat(data['seller_id'], data['seller_name'], 'products_rejected', 1)
+      # Look up seller info from approval queue since event payload may not include it
+      seller = Database.execute(
+        'SELECT seller_id, seller_name FROM report_approval_queue WHERE product_id = ? LIMIT 1',
+        [data['product_id']]
+      ).first
+      if seller
+        update_seller_stat(seller[:seller_id], seller[:seller_name], 'products_rejected', 1)
+      end
     end
 
     def handle_auction_started(data)
@@ -348,6 +364,24 @@ module Report
       else
         update_daily_metric('total_buyers', 1)
       end
+    end
+
+    def handle_seller_registered(data)
+      seller_id = data['seller_id'] || data['id']
+      seller_name = data['seller_name'] || data['name']
+      return unless seller_id
+
+      # Ensure seller has a row in report_seller_stats for today
+      Database.execute(
+        <<~SQL,
+          INSERT IGNORE INTO report_seller_stats
+          (seller_id, seller_name, period_date, products_listed, products_approved,
+           products_rejected, auctions_started, auctions_ended, revenue_cents, bids_received)
+          VALUES (?, ?, CURDATE(), 0, 0, 0, 0, 0, 0, 0)
+        SQL
+        [seller_id, seller_name]
+      )
+      update_daily_metric('total_sellers', 1)
     end
 
     def update_daily_metric(field, increment)

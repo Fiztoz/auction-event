@@ -162,4 +162,41 @@ class AdminController < Sinatra::Base
     halt 400, { error: 'buyer_id is required' }.to_json unless buyer_id
     { won: Report.my_won(buyer_id) }.to_json
   end
+
+  # ============================================
+  # SSE STREAM ENDPOINT
+  # ============================================
+
+  # SSE Stream for real-time dashboard updates
+  get '/api/events/stream' do
+    content_type 'text/event-stream'
+    cache_control 'no-cache'
+    headers 'Connection' => 'keep-alive'
+    response.headers['X-Accel-Buffering'] = 'no'
+
+    stream do |out|
+      SSEBroadcaster.subscribe(out)
+
+      # Send initial connection event
+      out << "event: connected\ndata: {\"status\":\"connected\",\"timestamp\":\"#{Time.now.iso8601}\"}\n\n"
+
+      # Keep connection alive with heartbeat every 30 seconds
+      begin
+        loop do
+          sleep 30
+          out << ": heartbeat\n\n"
+        end
+      rescue IOError, Errno::EPIPE
+        # Client disconnected
+      ensure
+        SSEBroadcaster.unsubscribe(out)
+      end
+    end
+  end
+
+  # SSE health check
+  get '/api/events/health' do
+    content_type :json
+    { sse_clients: SSEBroadcaster.client_count, status: 'ok' }.to_json
+  end
 end

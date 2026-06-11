@@ -19,25 +19,6 @@ services:
       retries: 5
       start_period: 30s
 
-  # ── Event Bus ──────────────────────────────────────────────
-  
-  rabbitmq:
-    image: rabbitmq:3-management
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # ── Reporting Service (Ruby/Sinatra Fullstack) ──────────────
   
   app:
@@ -46,15 +27,13 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     environment:
       MARIADB_HOST: mariadb
       MARIADB_PORT: 3306
       MARIADB_DATABASE: ${MARIADB_DATABASE:-reporting}
       MARIADB_USER: root
       MARIADB_PASSWORD: ${MARIADB_PASSWORD:-reporting_password}
-      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_HOST: 10.204.160.108
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
@@ -101,7 +80,7 @@ services:
       MARIADB_DATABASE: ${MARIADB_DATABASE:-reporting}
       MARIADB_USER: root
       MARIADB_PASSWORD: ${MARIADB_PASSWORD:-reporting_password}
-      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_HOST: 10.204.160.108
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
@@ -110,13 +89,10 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     volumes:
       - .:/app
       - bundle_cache:/usr/local/bundle
 
 volumes:
   mariadb_data:
-  rabbitmq_data:
   bundle_cache:

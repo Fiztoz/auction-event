@@ -23,7 +23,7 @@ module RabbitMQ
     'selling' => %w[product.listed product.approved product.rejected auction.started],
     'bidding' => %w[bid.placed auction.ended],
     'settlement' => %w[settlement.created settlement.invoiced settlement.paid settlement.shipped settlement.completed],
-    'onboarding' => %w[user.registered]
+    'onboarding' => %w[user.registered seller.registered]
   }.freeze
 
   # All event types
